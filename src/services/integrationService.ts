@@ -13,6 +13,9 @@ export const integrationService = {
     category: string,
     credentials: Record<string, string>
   ): Promise<DatabaseAPIIntegration> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
     const { data: integration, error } = await (supabase as any)
       .from('api_integrations')
       .insert({
@@ -20,7 +23,8 @@ export const integrationService = {
         provider,
         category,
         status: 'connected',
-        has_data: false
+        has_data: false,
+        user_id: user.id
       })
       .select()
       .single();
@@ -38,9 +42,13 @@ export const integrationService = {
 
   // Get all integrations for the current user
   async getUserIntegrations(): Promise<DatabaseAPIIntegration[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
     const { data, error } = await (supabase as any)
       .from('api_integrations')
       .select('*')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     if (error) throw error;

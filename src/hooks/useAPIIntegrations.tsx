@@ -8,12 +8,14 @@ import { useAIAPI } from '@/hooks/integrations/useAIAPI';
 import { integrationService } from '@/services/integrationService';
 import { credentialsService } from '@/services/credentialsService';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export const useAPIIntegrations = () => {
   const [integrations, setIntegrations] = useState<APIIntegration[]>([]);
   const [realTimeData, setRealTimeData] = useState<RealTimeData>({});
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { connectTrelloAPI: trelloConnect } = useTrelloAPI();
   const { connectGoogleCalendar: googleConnect } = useGoogleCalendarAPI();
@@ -21,10 +23,13 @@ export const useAPIIntegrations = () => {
 
   // Load integrations from database
   const loadIntegrations = useCallback(async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+    if (!user) {
+      setIntegrations([]);
+      setRealTimeData({});
+      return;
+    }
 
+    try {
       const dbIntegrations = await integrationService.getUserIntegrations();
       
       // Convert database integrations to the expected format
@@ -58,26 +63,23 @@ export const useAPIIntegrations = () => {
     } catch (error) {
       console.error('Failed to load integrations:', error);
     }
-  }, []);
+  }, [user]);
 
-  // Load integrations on mount and auth changes
+  // Load integrations when user changes
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        loadIntegrations();
-      } else {
-        setIntegrations([]);
-        setRealTimeData({});
-      }
-    });
-
-    // Load immediately if user is already logged in
     loadIntegrations();
-
-    return () => subscription.unsubscribe();
   }, [loadIntegrations]);
 
   const connectTrelloAPI = useCallback(async (apiKey: string, token: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to connect APIs",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const result = await trelloConnect(apiKey, token);
@@ -116,9 +118,18 @@ export const useAPIIntegrations = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [trelloConnect, loadIntegrations, toast]);
+  }, [trelloConnect, loadIntegrations, toast, user]);
 
   const connectGoogleCalendar = useCallback(async (accessToken: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to connect APIs",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const result = await googleConnect(accessToken);
@@ -156,9 +167,18 @@ export const useAPIIntegrations = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [googleConnect, loadIntegrations, toast]);
+  }, [googleConnect, loadIntegrations, toast, user]);
 
   const connectAIAPI = useCallback(async (apiKey: string, provider: AIProvider, model: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to connect APIs",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const result = await aiConnect(apiKey, provider, model);
@@ -187,11 +207,11 @@ export const useAPIIntegrations = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [aiConnect, loadIntegrations, toast]);
+  }, [aiConnect, loadIntegrations, toast, user]);
 
   const refreshIntegration = useCallback(async (integrationId: string) => {
     const integration = integrations.find(int => int.id === integrationId);
-    if (!integration) return;
+    if (!integration || !user) return;
 
     try {
       await integrationService.updateIntegrationStatus(integrationId, 'syncing');
@@ -212,9 +232,11 @@ export const useAPIIntegrations = () => {
       await integrationService.updateIntegrationStatus(integrationId, 'error');
       await loadIntegrations();
     }
-  }, [integrations, connectTrelloAPI, connectGoogleCalendar, loadIntegrations]);
+  }, [integrations, connectTrelloAPI, connectGoogleCalendar, loadIntegrations, user]);
 
   const disconnectIntegration = useCallback(async (integrationId: string) => {
+    if (!user) return;
+
     try {
       await integrationService.deleteIntegration(integrationId);
       await loadIntegrations();
@@ -243,7 +265,7 @@ export const useAPIIntegrations = () => {
         variant: "destructive"
       });
     }
-  }, [integrations, loadIntegrations, toast]);
+  }, [integrations, loadIntegrations, toast, user]);
 
   return {
     integrations: integrations.filter(int => int.hasData || int.status === 'error'),
