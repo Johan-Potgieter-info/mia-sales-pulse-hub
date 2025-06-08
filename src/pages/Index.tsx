@@ -4,12 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Calendar, BarChart3, Database, Trello, Download, TrendingUp, TrendingDown, Users, DollarSign, Target, Clock } from "lucide-react";
+import { Calendar, BarChart3, Database, Trello, Download, TrendingUp, TrendingDown, Users, DollarSign, Target, Clock, Settings, Plug } from "lucide-react";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import { CalendlyTab } from "@/components/tabs/CalendlyTab";
 import { GoogleDriveTab } from "@/components/tabs/GoogleDriveTab";
 import { TrelloTab } from "@/components/tabs/TrelloTab";
 import { AnalyticsTab } from "@/components/tabs/AnalyticsTab";
+import { IntegrationsTab } from "@/components/tabs/IntegrationsTab";
 import { AIInsights } from "@/components/dashboard/AIInsights";
 
 const Index = () => {
@@ -37,7 +38,7 @@ const Index = () => {
       {/* Main Content */}
       <div className="container mx-auto px-6 py-6">
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:grid-cols-6">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Dashboard</span>
@@ -57,6 +58,10 @@ const Index = () => {
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <Target className="w-4 h-4" />
               <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger value="integrations" className="flex items-center gap-2">
+              <Plug className="w-4 h-4" />
+              <span className="hidden sm:inline">Integrations</span>
             </TabsTrigger>
           </TabsList>
 
@@ -78,6 +83,10 @@ const Index = () => {
 
           <TabsContent value="analytics">
             <AnalyticsTab />
+          </TabsContent>
+
+          <TabsContent value="integrations">
+            <IntegrationsTab />
           </TabsContent>
         </Tabs>
 
