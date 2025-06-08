@@ -2,179 +2,150 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Database, AlertTriangle, TrendingUp } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Calendar, BarChart3, Database, Trello, Download, TrendingUp, TrendingDown, Users, DollarSign, Target, Clock, Settings, Plug, Wifi, WifiOff } from "lucide-react";
+import { KPICard } from "./KPICard";
+import { SalesChart } from "./SalesChart";
+import { PipelineChart } from "./PipelineChart";
+import { LeadSourceChart } from "./LeadSourceChart";
 import { useAPIIntegrations } from "@/hooks/useAPIIntegrations";
 
-const EmptyState = ({ title, description, icon: Icon, actionText, onAction }: {
-  title: string;
-  description: string;
-  icon: React.ElementType;
-  actionText: string;
-  onAction: () => void;
-}) => (
-  <Card className="border-dashed border-2 border-muted-foreground/25">
-    <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-      <Icon className="w-12 h-12 text-muted-foreground/50 mb-4" />
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>
-      <p className="text-muted-foreground mb-4 max-w-md">{description}</p>
-      <Button onClick={onAction} variant="outline">
-        {actionText}
-      </Button>
-    </CardContent>
-  </Card>
-);
+interface DashboardOverviewProps {
+  onNavigateToIntegrations?: () => void;
+}
 
-export const DashboardOverview = () => {
+export const DashboardOverview = ({ onNavigateToIntegrations }: DashboardOverviewProps) => {
   const { integrations, realTimeData } = useAPIIntegrations();
-
-  const hasCalendarData = realTimeData.googleCalendar?.events?.length > 0;
-  const hasTrelloData = realTimeData.trello?.boards?.length > 0;
-  const hasAnyData = hasCalendarData || hasTrelloData;
-
-  // Calculate real metrics from actual data
-  const calendarMetrics = hasCalendarData ? {
-    totalEvents: realTimeData.googleCalendar?.events?.length || 0,
-    upcomingEvents: realTimeData.googleCalendar?.events?.filter(event => 
-      new Date(event.start?.dateTime || event.start?.date) > new Date()
-    ).length || 0
-  } : null;
-
-  const trelloMetrics = hasTrelloData ? {
-    totalBoards: realTimeData.trello?.boards?.length || 0,
-    totalCards: realTimeData.trello?.cards?.length || 0
-  } : null;
-
-  if (!hasAnyData) {
-    return (
-      <div className="space-y-6">
-        <div className="text-center py-12">
-          <AlertTriangle className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
-          <h2 className="text-2xl font-semibold mb-2">No Data Available</h2>
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            Connect your APIs to start seeing real-time insights and analytics from your tools.
-          </p>
-          <Button onClick={() => window.location.hash = '#integrations'}>
-            Connect Your First API
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const hasConnectedAPIs = integrations.length > 0;
+  const connectedCount = integrations.filter(int => int.status === 'connected').length;
+  
+  // Mock data - in real app this would come from your APIs
+  const mockData = {
+    totalRevenue: 127500,
+    newLeads: 142,
+    conversionRate: 23.5,
+    averageDealSize: 3200
+  };
 
   return (
     <div className="space-y-6">
-      {/* Connection Status Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="w-5 h-5" />
-            Connected Data Sources
-          </CardTitle>
-          <CardDescription>Real-time data from your connected APIs</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            {integrations.map((integration) => (
-              <div key={integration.id} className="flex items-center gap-2 p-2 border rounded-lg">
-                {integration.icon}
-                <span className="text-sm font-medium">{integration.name}</span>
-                <Badge 
-                  variant={integration.status === 'connected' ? 'default' : 
-                          integration.status === 'syncing' ? 'secondary' : 'destructive'}
-                  className="text-xs"
-                >
-                  {integration.status === 'connected' ? '🟢' : 
-                   integration.status === 'syncing' ? '🟠' : '🔴'} 
-                  {integration.status}
-                </Badge>
+      {/* Connection Status Card */}
+      <Card className={hasConnectedAPIs ? "border-green-200 bg-green-50" : "border-orange-200 bg-orange-50"}>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {hasConnectedAPIs ? (
+                <Wifi className="w-6 h-6 text-green-600" />
+              ) : (
+                <WifiOff className="w-6 h-6 text-orange-600" />
+              )}
+              <div>
+                <h3 className="text-lg font-semibold">
+                  {hasConnectedAPIs ? `${connectedCount} API${connectedCount !== 1 ? 's' : ''} Connected` : 'No APIs Connected'}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {hasConnectedAPIs 
+                    ? 'Your dashboard is showing real-time data'
+                    : 'Connect your APIs to see real sales data'
+                  }
+                </p>
               </div>
-            ))}
+            </div>
+            {!hasConnectedAPIs && (
+              <Button onClick={onNavigateToIntegrations} className="flex items-center gap-2">
+                <Plug className="w-4 h-4" />
+                Connect APIs
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Real Data Widgets */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Calendar Data */}
-        {hasCalendarData && calendarMetrics && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Calendar Events</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{calendarMetrics.totalEvents}</div>
-              <p className="text-xs text-muted-foreground">
-                {calendarMetrics.upcomingEvents} upcoming
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Trello Data */}
-        {hasTrelloData && trelloMetrics && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Trello Boards</CardTitle>
-              <Database className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{trelloMetrics.totalBoards}</div>
-              <p className="text-xs text-muted-foreground">
-                {trelloMetrics.totalCards} total cards
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Growth Indicator */}
-        {hasAnyData && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Data Sources</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{integrations.length}</div>
-              <p className="text-xs text-muted-foreground">APIs connected</p>
-            </CardContent>
-          </Card>
-        )}
+      {/* KPI Cards */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <KPICard
+          title="Total Revenue"
+          value={`$${mockData.totalRevenue.toLocaleString()}`}
+          change="+12.5%"
+          trend="up"
+          icon={<DollarSign className="w-4 h-4" />}
+          isLive={hasConnectedAPIs}
+        />
+        <KPICard
+          title="New Leads"
+          value={mockData.newLeads.toString()}
+          change="+8.2%"
+          trend="up"
+          icon={<Users className="w-4 h-4" />}
+          isLive={hasConnectedAPIs}
+        />
+        <KPICard
+          title="Conversion Rate"
+          value={`${mockData.conversionRate}%`}
+          change="-2.1%"
+          trend="down"
+          icon={<Target className="w-4 h-4" />}
+          isLive={hasConnectedAPIs}
+        />
+        <KPICard
+          title="Avg Deal Size"
+          value={`$${mockData.averageDealSize.toLocaleString()}`}
+          change="+5.7%"
+          trend="up"
+          icon={<BarChart3 className="w-4 h-4" />}
+          isLive={hasConnectedAPIs}
+        />
       </div>
 
-      {/* Recent Activity from Real Data */}
-      {hasAnyData && (
+      {/* Charts Grid */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <SalesChart />
+        <PipelineChart />
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-3">
+        <div className="md:col-span-2">
+          <LeadSourceChart />
+        </div>
+        
+        {/* Quick Actions */}
         <Card>
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest updates from your connected APIs</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              Quick Actions
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {hasCalendarData && realTimeData.googleCalendar?.events?.slice(0, 3).map((event, index) => (
-              <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{event.summary || 'Unnamed Event'}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(event.start?.dateTime || event.start?.date).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            ))}
-            
-            {hasTrelloData && realTimeData.trello?.boards?.slice(0, 2).map((board, index) => (
-              <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Trello: {board.name}</p>
-                  <p className="text-xs text-muted-foreground">Board updated</p>
-                </div>
-              </div>
-            ))}
+          <CardContent className="space-y-3">
+            <Button variant="outline" className="w-full justify-start" onClick={onNavigateToIntegrations}>
+              <Plug className="w-4 h-4 mr-2" />
+              {hasConnectedAPIs ? 'Manage Integrations' : 'Connect APIs'}
+            </Button>
+            <Button variant="outline" className="w-full justify-start" disabled={!hasConnectedAPIs}>
+              <Download className="w-4 h-4 mr-2" />
+              Export Report
+            </Button>
+            <Button variant="outline" className="w-full justify-start">
+              <Calendar className="w-4 h-4 mr-2" />
+              Schedule Review
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
-            {!hasCalendarData && !hasTrelloData && (
-              <p className="text-center text-muted-foreground">No recent activity</p>
-            )}
+      {/* Empty State for No Data */}
+      {!hasConnectedAPIs && (
+        <Card className="border-dashed border-2">
+          <CardContent className="flex flex-col items-center justify-center p-12 text-center">
+            <Database className="w-16 h-16 text-muted-foreground/50 mb-6" />
+            <h3 className="text-xl font-semibold mb-2">Connect Your Data Sources</h3>
+            <p className="text-muted-foreground mb-6 max-w-md">
+              Get started by connecting your APIs to see real sales data, analytics, and insights in your dashboard.
+            </p>
+            <Button onClick={onNavigateToIntegrations} size="lg" className="flex items-center gap-2">
+              <Plug className="w-5 h-5" />
+              Connect Your First API
+            </Button>
           </CardContent>
         </Card>
       )}

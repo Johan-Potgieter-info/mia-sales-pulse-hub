@@ -13,11 +13,17 @@ import { AnalyticsTab } from "@/components/tabs/AnalyticsTab";
 import { IntegrationsTab } from "@/components/tabs/IntegrationsTab";
 import { AIInsights } from "@/components/dashboard/AIInsights";
 import { useAPIIntegrations } from "@/hooks/useAPIIntegrations";
+import { useState } from "react";
 
 const Index = () => {
   const { integrations } = useAPIIntegrations();
+  const [activeTab, setActiveTab] = useState("dashboard");
   const hasConnectedAPIs = integrations.length > 0;
   const connectedCount = integrations.filter(int => int.status === 'connected').length;
+
+  const handleNavigateToIntegrations = () => {
+    setActiveTab("integrations");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -60,7 +66,7 @@ const Index = () => {
 
       {/* Main Content */}
       <div className="container mx-auto px-6 py-6">
-        <Tabs defaultValue="dashboard" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:grid-cols-6">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -89,7 +95,7 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="dashboard">
-            <DashboardOverview />
+            <DashboardOverview onNavigateToIntegrations={handleNavigateToIntegrations} />
           </TabsContent>
 
           <TabsContent value="calendly">
