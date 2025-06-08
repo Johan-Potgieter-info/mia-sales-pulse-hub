@@ -2,7 +2,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, AlertCircle, XCircle, Calendar, Database, Settings, RefreshCw, Wifi, WifiOff } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CheckCircle, AlertCircle, XCircle, Calendar, Database, Settings, RefreshCw, Wifi, WifiOff, AlertTriangle } from "lucide-react";
 import { useAPIIntegrations } from "@/hooks/useAPIIntegrations";
 
 export const APIConnectorDashboard = () => {
@@ -22,23 +23,18 @@ export const APIConnectorDashboard = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
-      connected: 'default',
-      error: 'destructive',
-      syncing: 'secondary',
-      disconnected: 'outline'
+    const config = {
+      connected: { variant: 'default' as const, emoji: '🟢', text: 'Connected' },
+      error: { variant: 'destructive' as const, emoji: '🔴', text: 'Error' },
+      syncing: { variant: 'secondary' as const, emoji: '🟠', text: 'Syncing' },
+      disconnected: { variant: 'outline' as const, emoji: '⚫', text: 'Disconnected' }
     };
     
-    const statusEmoji = {
-      connected: '🟢',
-      error: '🔴',
-      syncing: '🟠',
-      disconnected: '⚫'
-    };
+    const statusConfig = config[status as keyof typeof config] || config.disconnected;
     
     return (
-      <Badge variant={variants[status] || 'outline'}>
-        {statusEmoji[status as keyof typeof statusEmoji]} {status.charAt(0).toUpperCase() + status.slice(1)}
+      <Badge variant={statusConfig.variant}>
+        {statusConfig.emoji} {statusConfig.text}
       </Badge>
     );
   };
@@ -101,6 +97,17 @@ export const APIConnectorDashboard = () => {
                   <div className="text-sm text-muted-foreground">
                     {integration.description}
                   </div>
+
+                  {/* Show error message if connection failed */}
+                  {integration.status === 'error' && integration.errorMessage && (
+                    <Alert variant="destructive" className="mt-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription className="text-xs">
+                        {integration.errorMessage}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
                   {integration.metrics && Object.keys(integration.metrics).length > 0 && (
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       {Object.entries(integration.metrics).map(([key, value]) => (

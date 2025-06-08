@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { Calendar, Database, Trello, FileText, MessageSquare, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +14,7 @@ export interface APIIntegration {
   apiKey?: string;
   accessToken?: string;
   hasData: boolean;
+  errorMessage?: string;
 }
 
 export interface RealTimeData {
@@ -62,11 +62,18 @@ export const useAPIIntegrations = () => {
   const connectTrelloAPI = useCallback(async (apiKey: string, token: string) => {
     setIsLoading(true);
     try {
+      console.log('Connecting to Trello API...');
       // Real Trello API call
       const response = await fetch(`https://api.trello.com/1/members/me/boards?key=${apiKey}&token=${token}`);
-      if (!response.ok) throw new Error('Failed to connect to Trello');
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Trello API error:', response.status, errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText || 'Failed to connect to Trello'}`);
+      }
       
       const boards = await response.json();
+      console.log('Trello boards retrieved:', boards.length);
       
       const integration: APIIntegration = {
         id: 'trello',
@@ -99,9 +106,29 @@ export const useAPIIntegrations = () => {
 
     } catch (error) {
       console.error('Trello connection failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      // Store failed integration with error details
+      const failedIntegration: APIIntegration = {
+        id: 'trello',
+        name: 'Trello',
+        status: 'error',
+        lastSync: null,
+        description: 'Project management and task tracking',
+        icon: <Trello className="w-4 h-4 text-red-500" />,
+        category: 'project',
+        hasData: false,
+        errorMessage
+      };
+
+      setIntegrations(prev => {
+        const filtered = prev.filter(int => int.id !== 'trello');
+        return [...filtered, failedIntegration];
+      });
+
       toast({
-        title: "Connection Failed",
-        description: "Failed to connect to Trello. Please check your API credentials.",
+        title: "Trello Connection Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -112,12 +139,19 @@ export const useAPIIntegrations = () => {
   const connectGoogleCalendar = useCallback(async (accessToken: string) => {
     setIsLoading(true);
     try {
+      console.log('Connecting to Google Calendar API...');
       // Real Google Calendar API call
       const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?access_token=${accessToken}`);
-      if (!response.ok) throw new Error('Failed to connect to Google Calendar');
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Google Calendar API error:', response.status, errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText || 'Failed to connect to Google Calendar'}`);
+      }
       
       const data = await response.json();
       const events = data.items || [];
+      console.log('Google Calendar events retrieved:', events.length);
       
       const integration: APIIntegration = {
         id: 'google-calendar',
@@ -149,9 +183,29 @@ export const useAPIIntegrations = () => {
 
     } catch (error) {
       console.error('Google Calendar connection failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      // Store failed integration with error details
+      const failedIntegration: APIIntegration = {
+        id: 'google-calendar',
+        name: 'Google Calendar',
+        status: 'error',
+        lastSync: null,
+        description: 'Calendar events and scheduling',
+        icon: <Calendar className="w-4 h-4 text-red-500" />,
+        category: 'calendar',
+        hasData: false,
+        errorMessage
+      };
+
+      setIntegrations(prev => {
+        const filtered = prev.filter(int => int.id !== 'google-calendar');
+        return [...filtered, failedIntegration];
+      });
+
       toast({
-        title: "Connection Failed",
-        description: "Failed to connect to Google Calendar. Please check your access token.",
+        title: "Google Calendar Connection Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -162,58 +216,155 @@ export const useAPIIntegrations = () => {
   const connectAIAPI = useCallback(async (apiKey: string, provider: 'openai' | 'claude', model: string) => {
     setIsLoading(true);
     try {
-      // Test AI API connection
-      const baseUrl = provider === 'openai' 
-        ? 'https://api.openai.com/v1/chat/completions'
-        : 'https://api.anthropic.com/v1/messages';
+      console.log(`Connecting to ${provider} API with model ${model}...`);
+      
+      let response: Response;
+      let testSuccessful = false;
+      let errorDetails = '';
 
-      const headers = provider === 'openai'
-        ? { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
-        : { 'x-api-key': apiKey, 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' };
+      if (provider === 'openai') {
+        // Test OpenAI API connection
+        try {
+          response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              model,
+              messages: [{ role: 'user', content: 'Test connection' }],
+              max_tokens: 5
+            })
+          });
 
-      const body = provider === 'openai'
-        ? { model, messages: [{ role: 'user', content: 'Test connection' }], max_tokens: 5 }
-        : { model, max_tokens: 5, messages: [{ role: 'user', content: 'Test connection' }] };
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            console.error('OpenAI API error:', response.status, errorData);
+            
+            if (response.status === 401) {
+              errorDetails = 'Invalid API key. Please check your OpenAI API key.';
+            } else if (response.status === 429) {
+              errorDetails = 'Rate limit exceeded. Please try again later.';
+            } else if (response.status === 400 && errorData?.error?.code === 'model_not_found') {
+              errorDetails = `Model "${model}" not found. Please check the model name.`;
+            } else {
+              errorDetails = errorData?.error?.message || `HTTP ${response.status}: Failed to connect to OpenAI`;
+            }
+            throw new Error(errorDetails);
+          }
 
-      const response = await fetch(baseUrl, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body)
-      });
+          const result = await response.json();
+          console.log('OpenAI API test successful:', result);
+          testSuccessful = true;
+        } catch (fetchError) {
+          if (fetchError instanceof TypeError && fetchError.message.includes('fetch')) {
+            errorDetails = 'Network error: Cannot reach OpenAI API. Check your internet connection.';
+          } else {
+            errorDetails = fetchError instanceof Error ? fetchError.message : 'Unknown error occurred';
+          }
+          throw fetchError;
+        }
+      } else if (provider === 'claude') {
+        // Test Anthropic Claude API connection
+        try {
+          response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'x-api-key': apiKey,
+              'Content-Type': 'application/json',
+              'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify({
+              model,
+              max_tokens: 5,
+              messages: [{ role: 'user', content: 'Test connection' }]
+            })
+          });
 
-      if (!response.ok) throw new Error('Failed to connect to AI API');
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            console.error('Claude API error:', response.status, errorData);
+            
+            if (response.status === 401) {
+              errorDetails = 'Invalid API key. Please check your Anthropic API key.';
+            } else if (response.status === 429) {
+              errorDetails = 'Rate limit exceeded. Please try again later.';
+            } else if (response.status === 400 && errorData?.error?.type === 'invalid_request_error') {
+              errorDetails = `Model "${model}" not found or invalid. Please check the model name.`;
+            } else {
+              errorDetails = errorData?.error?.message || `HTTP ${response.status}: Failed to connect to Claude`;
+            }
+            throw new Error(errorDetails);
+          }
 
-      const integration: APIIntegration = {
+          const result = await response.json();
+          console.log('Claude API test successful:', result);
+          testSuccessful = true;
+        } catch (fetchError) {
+          if (fetchError instanceof TypeError && fetchError.message.includes('fetch')) {
+            errorDetails = 'Network error: Cannot reach Anthropic API. Check your internet connection.';
+          } else {
+            errorDetails = fetchError instanceof Error ? fetchError.message : 'Unknown error occurred';
+          }
+          throw fetchError;
+        }
+      }
+
+      if (testSuccessful) {
+        const integration: APIIntegration = {
+          id: `ai-${provider}`,
+          name: `${provider === 'openai' ? 'OpenAI' : 'Claude'} AI`,
+          status: 'connected',
+          lastSync: new Date().toLocaleString(),
+          description: `AI insights powered by ${model}`,
+          icon: <MessageSquare className="w-4 h-4 text-purple-500" />,
+          category: 'ai',
+          apiKey,
+          hasData: true,
+          metrics: {
+            'Model': model,
+            'Provider': provider === 'openai' ? 'OpenAI' : 'Anthropic',
+            'Status': 'Connected'
+          }
+        };
+
+        setIntegrations(prev => {
+          const filtered = prev.filter(int => !int.id.startsWith('ai-'));
+          return [...filtered, integration];
+        });
+
+        toast({
+          title: "AI API Connected",
+          description: `Successfully connected to ${provider === 'openai' ? 'OpenAI' : 'Claude'} using ${model}`,
+        });
+      }
+
+    } catch (error) {
+      console.error('AI API connection failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      // Store failed integration with error details
+      const failedIntegration: APIIntegration = {
         id: `ai-${provider}`,
         name: `${provider === 'openai' ? 'OpenAI' : 'Claude'} AI`,
-        status: 'connected',
-        lastSync: new Date().toLocaleString(),
+        status: 'error',
+        lastSync: null,
         description: `AI insights powered by ${model}`,
-        icon: <MessageSquare className="w-4 h-4 text-purple-500" />,
+        icon: <MessageSquare className="w-4 h-4 text-red-500" />,
         category: 'ai',
-        apiKey,
-        hasData: true,
-        metrics: {
-          'Model': model,
-          'Status': 'Connected'
-        }
+        hasData: false,
+        errorMessage
       };
 
       setIntegrations(prev => {
         const filtered = prev.filter(int => !int.id.startsWith('ai-'));
-        return [...filtered, integration];
+        return [...filtered, failedIntegration];
       });
 
       toast({
-        title: "AI API Connected",
-        description: `Successfully connected to ${provider === 'openai' ? 'OpenAI' : 'Claude'}`,
-      });
-
-    } catch (error) {
-      console.error('AI API connection failed:', error);
-      toast({
-        title: "Connection Failed",
-        description: "Failed to connect to AI API. Please check your API key.",
+        title: "AI API Connection Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -278,7 +429,7 @@ export const useAPIIntegrations = () => {
   }, [toast]);
 
   return {
-    integrations: integrations.filter(int => int.hasData), // Only return integrations with data
+    integrations: integrations.filter(int => int.hasData || int.status === 'error'), // Show integrations with data or errors
     realTimeData,
     isLoading,
     connectTrelloAPI,
