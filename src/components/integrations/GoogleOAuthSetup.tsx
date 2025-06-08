@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ExternalLink, Info } from 'lucide-react';
+import { ExternalLink, Key } from 'lucide-react';
 import { GoogleOAuthService } from '@/services/googleOAuthService';
 
 interface GoogleOAuthSetupProps {
@@ -13,86 +13,38 @@ interface GoogleOAuthSetupProps {
 }
 
 export const GoogleOAuthSetup = ({ onStartOAuth }: GoogleOAuthSetupProps) => {
-  const [clientId, setClientId] = useState(localStorage.getItem('google_client_id') || '');
-  const [clientSecret, setClientSecret] = useState(localStorage.getItem('google_client_secret') || '');
-  const [isConfigured, setIsConfigured] = useState(
-    !!localStorage.getItem('google_client_id') && !!localStorage.getItem('google_client_secret')
-  );
-
-  const handleSaveCredentials = () => {
-    if (!clientId.trim() || !clientSecret.trim()) {
-      alert('Please enter both Client ID and Client Secret');
-      return;
-    }
-
-    localStorage.setItem('google_client_id', clientId.trim());
-    localStorage.setItem('google_client_secret', clientSecret.trim());
-    setIsConfigured(true);
-  };
+  const [clientId, setClientId] = useState('');
+  const [clientSecret, setClientSecret] = useState('');
+  const [showInstructions, setShowInstructions] = useState(false);
 
   const handleStartOAuth = () => {
-    if (!isConfigured) {
-      alert('Please configure your OAuth credentials first');
+    if (!clientId.trim()) {
+      alert('Please enter your Google Client ID');
       return;
     }
 
+    if (!clientSecret.trim()) {
+      alert('Please enter your Google Client Secret');
+      return;
+    }
+
+    // Store credentials in localStorage for the OAuth flow
+    localStorage.setItem('google_client_id', clientId);
+    localStorage.setItem('google_client_secret', clientSecret);
+
+    // Start OAuth flow
     const oauthService = new GoogleOAuthService(clientId);
     oauthService.startOAuthFlow();
+    
     onStartOAuth();
   };
-
-  const getCurrentRedirectUri = () => {
-    return `${window.location.origin}/oauth/google/callback`;
-  };
-
-  if (isConfigured) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            📅 Google Calendar OAuth
-          </CardTitle>
-          <CardDescription>
-            OAuth credentials configured. Ready to connect to Google Calendar.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Redirect URI:</strong> {getCurrentRedirectUri()}
-              <br />
-              Make sure this URL is added to your Google OAuth configuration.
-            </AlertDescription>
-          </Alert>
-
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Click the button below to start the OAuth flow and authorize calendar access.
-            </p>
-          </div>
-
-          <div className="flex gap-2">
-            <Button onClick={handleStartOAuth} className="flex-1">
-              Connect Google Calendar
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsConfigured(false)}
-            >
-              Reconfigure
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          📅 Google Calendar OAuth Setup
+          <Key className="w-5 h-5" />
+          Google OAuth Setup
         </CardTitle>
         <CardDescription>
           Configure your Google OAuth credentials to connect to Google Calendar
@@ -100,63 +52,62 @@ export const GoogleOAuthSetup = ({ onStartOAuth }: GoogleOAuthSetupProps) => {
       </CardHeader>
       <CardContent className="space-y-4">
         <Alert>
-          <Info className="h-4 w-4" />
           <AlertDescription>
-            <strong>Required Redirect URI:</strong> {getCurrentRedirectUri()}
-            <br />
-            Add this to your Google Cloud Console OAuth configuration.
+            <strong>Important:</strong> Make sure to add <code>https://mia-sales-pulse-hub.lovable.app/oauth/google/callback</code> as an authorized redirect URI in your Google Cloud Console.
           </AlertDescription>
         </Alert>
 
-        <div className="p-4 bg-blue-50 rounded-lg space-y-3">
-          <h4 className="font-medium">How to get Google OAuth credentials:</h4>
-          <ol className="text-sm space-y-2 list-decimal list-inside">
-            <li>
-              Go to{' '}
-              <a 
-                href="https://console.cloud.google.com/apis/credentials" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-blue-600 hover:underline inline-flex items-center gap-1"
-              >
-                Google Cloud Console <ExternalLink className="w-3 h-3" />
-              </a>
-            </li>
-            <li>Create or select a project</li>
-            <li>Enable the Google Calendar API</li>
-            <li>Create OAuth 2.0 credentials (Web application)</li>
-            <li>Add <code className="bg-gray-100 px-1 rounded">{getCurrentRedirectUri()}</code> to authorized redirect URIs</li>
-            <li>Copy your Client ID and Client Secret below</li>
-          </ol>
+        <div className="space-y-2">
+          <Label htmlFor="client-id">Google Client ID</Label>
+          <Input
+            id="client-id"
+            type="text"
+            placeholder="Your Google OAuth Client ID"
+            value={clientId}
+            onChange={(e) => setClientId(e.target.value)}
+          />
         </div>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="client-id">Google Client ID</Label>
-            <Input
-              id="client-id"
-              type="text"
-              placeholder="Your Google OAuth Client ID"
-              value={clientId}
-              onChange={(e) => setClientId(e.target.value)}
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="client-secret">Google Client Secret</Label>
+          <Input
+            id="client-secret"
+            type="password"
+            placeholder="Your Google OAuth Client Secret"
+            value={clientSecret}
+            onChange={(e) => setClientSecret(e.target.value)}
+          />
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="client-secret">Google Client Secret</Label>
-            <Input
-              id="client-secret"
-              type="password"
-              placeholder="Your Google OAuth Client Secret"
-              value={clientSecret}
-              onChange={(e) => setClientSecret(e.target.value)}
-            />
-          </div>
-
-          <Button onClick={handleSaveCredentials} className="w-full">
-            Save OAuth Credentials
+        <div className="flex gap-2">
+          <Button onClick={handleStartOAuth} className="flex-1">
+            Connect Google Calendar
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowInstructions(!showInstructions)}
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Setup Guide
           </Button>
         </div>
+
+        {showInstructions && (
+          <Alert>
+            <AlertDescription>
+              <div className="space-y-2">
+                <p><strong>Setup Instructions:</strong></p>
+                <ol className="list-decimal list-inside space-y-1 text-sm">
+                  <li>Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Cloud Console - Credentials</a></li>
+                  <li>Create a new OAuth 2.0 Client ID (Web application)</li>
+                  <li>Add <code>https://mia-sales-pulse-hub.lovable.app/oauth/google/callback</code> to Authorized redirect URIs</li>
+                  <li>Copy the Client ID and Client Secret to the fields above</li>
+                  <li>Enable the Google Calendar API in your project</li>
+                </ol>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
       </CardContent>
     </Card>
   );

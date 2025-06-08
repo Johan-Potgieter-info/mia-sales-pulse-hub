@@ -19,7 +19,7 @@ export class GoogleOAuthService {
   constructor(clientId: string) {
     this.config = {
       clientId,
-      redirectUri: `${window.location.origin}/oauth/google/callback`,
+      redirectUri: `https://mia-sales-pulse-hub.lovable.app/oauth/google/callback`,
       scope: 'https://www.googleapis.com/auth/calendar.readonly'
     };
   }
