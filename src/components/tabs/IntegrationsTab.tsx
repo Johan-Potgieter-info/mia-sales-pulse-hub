@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Database, Wifi, WifiOff } from "lucide-react";
 import { useState } from "react";
+import { RealAPIModal } from "@/components/integrations/RealAPIModal";
 
 export const IntegrationsTab = () => {
   const [showAddAPIModal, setShowAddAPIModal] = useState(false);
@@ -102,25 +103,11 @@ export const IntegrationsTab = () => {
         </CardContent>
       </Card>
 
-      {/* Simple Modal Placeholder */}
-      {showAddAPIModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md mx-4">
-            <CardHeader>
-              <CardTitle>Connect API</CardTitle>
-              <CardDescription>API connection modal coming soon...</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={() => setShowAddAPIModal(false)} 
-                className="w-full"
-              >
-                Close
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* Real API Modal */}
+      <RealAPIModal 
+        open={showAddAPIModal}
+        onOpenChange={setShowAddAPIModal}
+      />
     </div>
   );
 };
