@@ -106,6 +106,7 @@ export const useAIAPI = () => {
         const integration: APIIntegration = {
           id: `ai-${provider}`,
           name: `${provider === 'openai' ? 'OpenAI' : 'Claude'} AI`,
+          provider: provider,
           status: 'connected',
           lastSync: new Date().toLocaleString(),
           description: `AI insights powered by ${model}`,
@@ -135,6 +136,7 @@ export const useAIAPI = () => {
       const failedIntegration: APIIntegration = {
         id: `ai-${provider}`,
         name: `${provider === 'openai' ? 'OpenAI' : 'Claude'} AI`,
+        provider: provider,
         status: 'error',
         lastSync: null,
         description: `AI insights powered by ${model}`,

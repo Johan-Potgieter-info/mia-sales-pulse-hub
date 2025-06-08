@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { APIIntegration, RealTimeData, AIProvider } from '@/types/apiIntegrations';
@@ -31,7 +32,7 @@ export const useAPIIntegrations = () => {
     try {
       const dbIntegrations = await integrationService.getUserIntegrations();
       
-      // Convert database integrations to the expected format
+      // Convert database integrations to the expected format and load their data
       const formattedIntegrations: APIIntegration[] = await Promise.all(
         dbIntegrations.map(async (dbInt) => {
           // Get icon based on provider
@@ -44,9 +45,30 @@ export const useAPIIntegrations = () => {
             }
           };
 
+          // Load integration data if it exists
+          const integrationData = await integrationService.getIntegrationData(dbInt.id);
+          
+          // Update real-time data based on integration type
+          if (integrationData && integrationData.length > 0) {
+            const latestData = integrationData[0]; // Get most recent data
+            
+            if (dbInt.provider === 'google-calendar') {
+              setRealTimeData(prev => ({
+                ...prev,
+                googleCalendar: latestData.data
+              }));
+            } else if (dbInt.provider === 'trello') {
+              setRealTimeData(prev => ({
+                ...prev,
+                trello: latestData.data
+              }));
+            }
+          }
+
           return {
             id: dbInt.id,
             name: dbInt.name,
+            provider: dbInt.provider,
             status: dbInt.status,
             lastSync: dbInt.last_sync || null,
             description: `${dbInt.provider} integration`,
@@ -252,9 +274,9 @@ export const useAPIIntegrations = () => {
       // Get credentials and refresh data based on integration type
       const credentials = await credentialsService.getIntegrationCredentials(integrationId);
       
-      if (integration.id.includes('trello') && credentials.api_key && credentials.access_token) {
+      if (integration.provider === 'trello' && credentials.api_key && credentials.access_token) {
         await connectTrelloAPI(credentials.api_key, credentials.access_token);
-      } else if (integration.id.includes('google-calendar') && credentials.access_token) {
+      } else if (integration.provider === 'google-calendar' && credentials.access_token) {
         await connectGoogleCalendar(credentials.access_token);
       } else {
         await integrationService.updateIntegrationStatus(integrationId, 'connected');
@@ -278,8 +300,8 @@ export const useAPIIntegrations = () => {
         const newData = { ...prev };
         const integration = integrations.find(int => int.id === integrationId);
         if (integration) {
-          if (integration.id.includes('trello')) delete newData.trello;
-          if (integration.id.includes('google-calendar')) delete newData.googleCalendar;
+          if (integration.provider === 'trello') delete newData.trello;
+          if (integration.provider === 'google-calendar') delete newData.googleCalendar;
           if (integration.category === 'ai') delete newData.aiInsights;
         }
         return newData;

@@ -24,6 +24,7 @@ export const useTrelloAPI = () => {
       const integration: APIIntegration = {
         id: 'trello',
         name: 'Trello',
+        provider: 'trello',
         status: 'connected',
         lastSync: new Date().toLocaleString(),
         description: 'Project management and task tracking',
@@ -52,6 +53,7 @@ export const useTrelloAPI = () => {
       const failedIntegration: APIIntegration = {
         id: 'trello',
         name: 'Trello',
+        provider: 'trello',
         status: 'error',
         lastSync: null,
         description: 'Project management and task tracking',

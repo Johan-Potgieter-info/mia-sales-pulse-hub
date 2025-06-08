@@ -25,6 +25,7 @@ export const useGoogleCalendarAPI = () => {
       const integration: APIIntegration = {
         id: 'google-calendar',
         name: 'Google Calendar',
+        provider: 'google-calendar',
         status: 'connected',
         lastSync: new Date().toLocaleString(),
         description: 'Calendar events and scheduling',
@@ -52,6 +53,7 @@ export const useGoogleCalendarAPI = () => {
       const failedIntegration: APIIntegration = {
         id: 'google-calendar',
         name: 'Google Calendar',
+        provider: 'google-calendar',
         status: 'error',
         lastSync: null,
         description: 'Calendar events and scheduling',
