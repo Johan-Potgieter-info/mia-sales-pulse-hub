@@ -1,11 +1,88 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Calendar, BarChart3, Database, Trello, Download, TrendingUp, TrendingDown, Users, DollarSign, Target, Clock } from "lucide-react";
+import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
+import { CalendlyTab } from "@/components/tabs/CalendlyTab";
+import { GoogleDriveTab } from "@/components/tabs/GoogleDriveTab";
+import { TrelloTab } from "@/components/tabs/TrelloTab";
+import { AnalyticsTab } from "@/components/tabs/AnalyticsTab";
+import { AIInsights } from "@/components/dashboard/AIInsights";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b bg-card px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Mia Sales Reporting Hub</h1>
+            <p className="text-sm text-muted-foreground">Sales Analytics & Reporting Dashboard</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              Live Data
+            </Badge>
+            <Button variant="outline" size="sm">
+              <Download className="w-4 h-4 mr-2" />
+              Export Report
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-6 py-6">
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </TabsTrigger>
+            <TabsTrigger value="calendly" className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              <span className="hidden sm:inline">Calendly</span>
+            </TabsTrigger>
+            <TabsTrigger value="drive" className="flex items-center gap-2">
+              <Database className="w-4 h-4" />
+              <span className="hidden sm:inline">Drive</span>
+            </TabsTrigger>
+            <TabsTrigger value="trello" className="flex items-center gap-2">
+              <Trello className="w-4 h-4" />
+              <span className="hidden sm:inline">Trello</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dashboard">
+            <DashboardOverview />
+          </TabsContent>
+
+          <TabsContent value="calendly">
+            <CalendlyTab />
+          </TabsContent>
+
+          <TabsContent value="drive">
+            <GoogleDriveTab />
+          </TabsContent>
+
+          <TabsContent value="trello">
+            <TrelloTab />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <AnalyticsTab />
+          </TabsContent>
+        </Tabs>
+
+        {/* AI Insights Panel */}
+        <AIInsights />
       </div>
     </div>
   );
