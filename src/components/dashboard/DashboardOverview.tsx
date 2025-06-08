@@ -66,34 +66,30 @@ export const DashboardOverview = ({ onNavigateToIntegrations }: DashboardOvervie
         <KPICard
           title="Total Revenue"
           value={`$${mockData.totalRevenue.toLocaleString()}`}
-          change="+12.5%"
-          trend="up"
+          change={12.5}
           icon={DollarSign}
-          isLive={hasConnectedAPIs}
+          description="Total revenue generated this month"
         />
         <KPICard
           title="New Leads"
           value={mockData.newLeads.toString()}
-          change="+8.2%"
-          trend="up"
+          change={8.2}
           icon={Users}
-          isLive={hasConnectedAPIs}
+          description="Number of new leads acquired this month"
         />
         <KPICard
           title="Conversion Rate"
           value={`${mockData.conversionRate}%`}
-          change="-2.1%"
-          trend="down"
+          change={-2.1}
           icon={Target}
-          isLive={hasConnectedAPIs}
+          description="Percentage of leads converted to customers"
         />
         <KPICard
           title="Avg Deal Size"
           value={`$${mockData.averageDealSize.toLocaleString()}`}
-          change="+5.7%"
-          trend="up"
+          change={5.7}
           icon={BarChart3}
-          isLive={hasConnectedAPIs}
+          description="Average value of closed deals"
         />
       </div>
 
