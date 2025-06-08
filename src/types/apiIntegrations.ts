@@ -16,19 +16,6 @@ export interface APIIntegration {
   errorMessage?: string;
 }
 
-export interface DatabaseAPIIntegration {
-  id: string;
-  user_id: string;
-  name: string;
-  provider: string;
-  category: string;
-  status: 'connected' | 'syncing' | 'error' | 'disconnected';
-  has_data: boolean;
-  last_sync?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface RealTimeData {
   trello?: {
     boards: any[];
