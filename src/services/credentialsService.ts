@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { DatabaseAPICredential } from "@/types/database";
 
 // Simple encryption/decryption for demo purposes
 // In production, you'd want to use a more robust encryption method
@@ -32,8 +31,8 @@ export const credentialsService = {
   ) {
     const encryptedValue = encryptValue(value);
     
-    const { data, error } = await supabase
-      .from('api_credentials' as any)
+    const { data, error } = await (supabase as any)
+      .from('api_credentials')
       .upsert({
         integration_id: integrationId,
         credential_type: credentialType,
@@ -49,8 +48,8 @@ export const credentialsService = {
 
   // Retrieve and decrypt credentials
   async getCredential(integrationId: string, credentialType: string): Promise<string | null> {
-    const { data, error } = await supabase
-      .from('api_credentials' as any)
+    const { data, error } = await (supabase as any)
+      .from('api_credentials')
       .select('encrypted_value')
       .eq('integration_id', integrationId)
       .eq('credential_type', credentialType)
@@ -64,8 +63,8 @@ export const credentialsService = {
 
   // Get all credentials for an integration
   async getIntegrationCredentials(integrationId: string): Promise<Record<string, string>> {
-    const { data, error } = await supabase
-      .from('api_credentials' as any)
+    const { data, error } = await (supabase as any)
+      .from('api_credentials')
       .select('credential_type, encrypted_value')
       .eq('integration_id', integrationId);
 
@@ -82,8 +81,8 @@ export const credentialsService = {
 
   // Delete credentials for an integration
   async deleteIntegrationCredentials(integrationId: string) {
-    const { error } = await supabase
-      .from('api_credentials' as any)
+    const { error } = await (supabase as any)
+      .from('api_credentials')
       .delete()
       .eq('integration_id', integrationId);
 

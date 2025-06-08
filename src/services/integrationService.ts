@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { credentialsService } from "./credentialsService";
 import { DatabaseAPIIntegration } from "@/types/database";
 
-export { DatabaseAPIIntegration };
+export type { DatabaseAPIIntegration };
 
 export const integrationService = {
   // Create a new integration
@@ -13,8 +13,8 @@ export const integrationService = {
     category: string,
     credentials: Record<string, string>
   ): Promise<DatabaseAPIIntegration> {
-    const { data: integration, error } = await supabase
-      .from('api_integrations' as any)
+    const { data: integration, error } = await (supabase as any)
+      .from('api_integrations')
       .insert({
         name,
         provider,
@@ -33,18 +33,18 @@ export const integrationService = {
       await credentialsService.storeCredential(integration.id, type as any, value);
     }
 
-    return integration;
+    return integration as DatabaseAPIIntegration;
   },
 
   // Get all integrations for the current user
   async getUserIntegrations(): Promise<DatabaseAPIIntegration[]> {
-    const { data, error } = await supabase
-      .from('api_integrations' as any)
+    const { data, error } = await (supabase as any)
+      .from('api_integrations')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as DatabaseAPIIntegration[];
   },
 
   // Update integration status
@@ -62,8 +62,8 @@ export const integrationService = {
       updateData.has_data = hasData;
     }
 
-    const { error } = await supabase
-      .from('api_integrations' as any)
+    const { error } = await (supabase as any)
+      .from('api_integrations')
       .update(updateData)
       .eq('id', integrationId);
 
@@ -73,8 +73,8 @@ export const integrationService = {
   // Delete an integration and its credentials
   async deleteIntegration(integrationId: string) {
     // Credentials will be deleted automatically due to CASCADE
-    const { error } = await supabase
-      .from('api_integrations' as any)
+    const { error } = await (supabase as any)
+      .from('api_integrations')
       .delete()
       .eq('id', integrationId);
 
@@ -87,8 +87,8 @@ export const integrationService = {
     dataType: string,
     data: any
   ) {
-    const { error } = await supabase
-      .from('integration_data' as any)
+    const { error } = await (supabase as any)
+      .from('integration_data')
       .insert({
         integration_id: integrationId,
         data_type: dataType,
@@ -103,8 +103,8 @@ export const integrationService = {
 
   // Get integration data
   async getIntegrationData(integrationId: string, dataType?: string) {
-    let query = supabase
-      .from('integration_data' as any)
+    let query = (supabase as any)
+      .from('integration_data')
       .select('*')
       .eq('integration_id', integrationId);
 
