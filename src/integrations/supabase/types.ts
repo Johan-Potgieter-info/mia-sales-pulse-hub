@@ -9,7 +9,118 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      api_credentials: {
+        Row: {
+          created_at: string
+          credential_type: string
+          encrypted_value: string
+          expires_at: string | null
+          id: string
+          integration_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credential_type: string
+          encrypted_value: string
+          expires_at?: string | null
+          id?: string
+          integration_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credential_type?: string
+          encrypted_value?: string
+          expires_at?: string | null
+          id?: string
+          integration_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_credentials_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "api_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_integrations: {
+        Row: {
+          category: string
+          created_at: string
+          has_data: boolean
+          id: string
+          last_sync: string | null
+          name: string
+          provider: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          has_data?: boolean
+          id?: string
+          last_sync?: string | null
+          name: string
+          provider: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          has_data?: boolean
+          id?: string
+          last_sync?: string | null
+          name?: string
+          provider?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      integration_data: {
+        Row: {
+          created_at: string
+          data: Json
+          data_type: string
+          id: string
+          integration_id: string | null
+          synced_at: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          data_type: string
+          id?: string
+          integration_id?: string | null
+          synced_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          data_type?: string
+          id?: string
+          integration_id?: string | null
+          synced_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_data_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "api_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
