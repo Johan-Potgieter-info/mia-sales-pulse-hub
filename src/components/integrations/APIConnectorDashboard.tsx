@@ -2,11 +2,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, AlertCircle, XCircle, Calendar, Database, Trello, FileText, Settings, RefreshCw } from "lucide-react";
+import { CheckCircle, AlertCircle, XCircle, Calendar, Database, Settings, RefreshCw, Wifi, WifiOff } from "lucide-react";
 import { useAPIIntegrations } from "@/hooks/useAPIIntegrations";
 
 export const APIConnectorDashboard = () => {
-  const { integrations, refreshIntegration } = useAPIIntegrations();
+  const { integrations, refreshIntegration, disconnectIntegration, isLoading } = useAPIIntegrations();
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -14,8 +14,8 @@ export const APIConnectorDashboard = () => {
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'error':
         return <XCircle className="w-4 h-4 text-red-500" />;
-      case 'warning':
-        return <AlertCircle className="w-4 h-4 text-yellow-500" />;
+      case 'syncing':
+        return <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />;
       default:
         return <XCircle className="w-4 h-4 text-gray-400" />;
     }
@@ -25,26 +25,56 @@ export const APIConnectorDashboard = () => {
     const variants: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
       connected: 'default',
       error: 'destructive',
-      warning: 'secondary',
+      syncing: 'secondary',
       disconnected: 'outline'
+    };
+    
+    const statusEmoji = {
+      connected: '🟢',
+      error: '🔴',
+      syncing: '🟠',
+      disconnected: '⚫'
     };
     
     return (
       <Badge variant={variants[status] || 'outline'}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {statusEmoji[status as keyof typeof statusEmoji]} {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     );
   };
+
+  if (integrations.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="w-5 h-5" />
+            Connected APIs
+          </CardTitle>
+          <CardDescription>
+            No APIs connected yet. Start by connecting your first API to see real data.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="text-center py-8">
+          <WifiOff className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No Connected APIs</h3>
+          <p className="text-muted-foreground mb-4">
+            Connect your first API to start seeing real-time data and insights
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Database className="w-5 h-5" />
-          Connected APIs
+          <Wifi className="w-5 h-5 text-green-500" />
+          Connected APIs ({integrations.length})
         </CardTitle>
         <CardDescription>
-          Manage your integrations and monitor sync status
+          Real-time data from your authenticated API connections
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -62,7 +92,7 @@ export const APIConnectorDashboard = () => {
                 <div className="flex items-center justify-between">
                   {getStatusBadge(integration.status)}
                   <span className="text-xs text-muted-foreground">
-                    {integration.lastSync}
+                    {integration.lastSync || 'Never synced'}
                   </span>
                 </div>
               </CardHeader>
@@ -71,12 +101,12 @@ export const APIConnectorDashboard = () => {
                   <div className="text-sm text-muted-foreground">
                     {integration.description}
                   </div>
-                  {integration.metrics && (
+                  {integration.metrics && Object.keys(integration.metrics).length > 0 && (
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       {Object.entries(integration.metrics).map(([key, value]) => (
                         <div key={key} className="flex justify-between">
                           <span className="text-muted-foreground">{key}:</span>
-                          <span className="font-medium">{value}</span>
+                          <span className="font-medium">{String(value)}</span>
                         </div>
                       ))}
                     </div>
@@ -87,11 +117,16 @@ export const APIConnectorDashboard = () => {
                       variant="outline" 
                       className="flex-1"
                       onClick={() => refreshIntegration(integration.id)}
+                      disabled={isLoading || integration.status === 'syncing'}
                     >
-                      <RefreshCw className="w-3 h-3 mr-1" />
-                      Sync
+                      <RefreshCw className={`w-3 h-3 mr-1 ${integration.status === 'syncing' ? 'animate-spin' : ''}`} />
+                      {integration.status === 'syncing' ? 'Syncing...' : 'Sync'}
                     </Button>
-                    <Button size="sm" variant="ghost">
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      onClick={() => disconnectIntegration(integration.id)}
+                    >
                       <Settings className="w-3 h-3" />
                     </Button>
                   </div>

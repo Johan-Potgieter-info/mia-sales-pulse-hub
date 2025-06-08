@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Calendar, BarChart3, Database, Trello, Download, TrendingUp, TrendingDown, Users, DollarSign, Target, Clock, Settings, Plug } from "lucide-react";
+import { Calendar, BarChart3, Database, Trello, Download, TrendingUp, TrendingDown, Users, DollarSign, Target, Clock, Settings, Plug, Wifi, WifiOff } from "lucide-react";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import { CalendlyTab } from "@/components/tabs/CalendlyTab";
 import { GoogleDriveTab } from "@/components/tabs/GoogleDriveTab";
@@ -12,8 +12,13 @@ import { TrelloTab } from "@/components/tabs/TrelloTab";
 import { AnalyticsTab } from "@/components/tabs/AnalyticsTab";
 import { IntegrationsTab } from "@/components/tabs/IntegrationsTab";
 import { AIInsights } from "@/components/dashboard/AIInsights";
+import { useAPIIntegrations } from "@/hooks/useAPIIntegrations";
 
 const Index = () => {
+  const { integrations } = useAPIIntegrations();
+  const hasConnectedAPIs = integrations.length > 0;
+  const connectedCount = integrations.filter(int => int.status === 'connected').length;
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -21,13 +26,31 @@ const Index = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Mia Sales Reporting Hub</h1>
-            <p className="text-sm text-muted-foreground">Sales Analytics & Reporting Dashboard</p>
+            <p className="text-sm text-muted-foreground">
+              {hasConnectedAPIs 
+                ? `Real-time analytics from ${connectedCount} connected API${connectedCount !== 1 ? 's' : ''}`
+                : 'Connect your APIs to see real-time sales analytics'
+              }
+            </p>
           </div>
           <div className="flex items-center gap-3">
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-              Live Data
+            <Badge 
+              variant={hasConnectedAPIs ? "default" : "outline"} 
+              className={hasConnectedAPIs ? "bg-green-50 text-green-700 border-green-200" : ""}
+            >
+              {hasConnectedAPIs ? (
+                <>
+                  <Wifi className="w-3 h-3 mr-1" />
+                  {connectedCount} API{connectedCount !== 1 ? 's' : ''} Live
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-3 h-3 mr-1" />
+                  No APIs Connected
+                </>
+              )}
             </Badge>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" disabled={!hasConnectedAPIs}>
               <Download className="w-4 h-4 mr-2" />
               Export Report
             </Button>
@@ -45,7 +68,7 @@ const Index = () => {
             </TabsTrigger>
             <TabsTrigger value="calendly" className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              <span className="hidden sm:inline">Calendly</span>
+              <span className="hidden sm:inline">Calendar</span>
             </TabsTrigger>
             <TabsTrigger value="drive" className="flex items-center gap-2">
               <Database className="w-4 h-4" />
@@ -90,8 +113,8 @@ const Index = () => {
           </TabsContent>
         </Tabs>
 
-        {/* AI Insights Panel */}
-        <AIInsights />
+        {/* AI Insights Panel - Only show if AI is connected */}
+        {integrations.some(int => int.category === 'ai') && <AIInsights />}
       </div>
     </div>
   );
