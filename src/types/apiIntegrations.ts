@@ -4,6 +4,7 @@ import { ReactNode } from 'react';
 export interface APIIntegration {
   id: string;
   name: string;
+  provider: string;
   status: 'connected' | 'disconnected' | 'error' | 'syncing';
   lastSync: string | null;
   description: string;
