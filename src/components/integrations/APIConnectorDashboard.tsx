@@ -22,7 +22,7 @@ export const APIConnectorDashboard = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants = {
+    const variants: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
       connected: 'default',
       error: 'destructive',
       warning: 'secondary',
@@ -30,7 +30,7 @@ export const APIConnectorDashboard = () => {
     };
     
     return (
-      <Badge variant={variants[status as keyof typeof variants] || 'outline'}>
+      <Badge variant={variants[status] || 'outline'}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     );

@@ -122,7 +122,7 @@ export const AskAIPanel = () => {
                       <div key={key} className="flex items-center gap-1">
                         <Target className="w-3 h-3" />
                         <span className="font-medium">{key}:</span>
-                        <span>{value}</span>
+                        <span>{String(value)}</span>
                       </div>
                     ))}
                   </div>
