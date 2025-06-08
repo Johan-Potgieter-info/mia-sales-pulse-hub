@@ -152,4 +152,4 @@ export const useAPIIntegrations = () => {
   };
 };
 
-export { APIIntegration, RealTimeData } from '@/types/apiIntegrations';
+export type { APIIntegration, RealTimeData } from '@/types/apiIntegrations';
