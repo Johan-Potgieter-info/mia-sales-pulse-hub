@@ -5,17 +5,16 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Database, Wifi, WifiOff } from "lucide-react";
 import { useState } from "react";
 import { RealAPIModal } from "@/components/integrations/RealAPIModal";
+import { APIConnectorDashboard } from "@/components/integrations/APIConnectorDashboard";
+import { useAPIIntegrations } from "@/hooks/useAPIIntegrations";
 
 export const IntegrationsTab = () => {
   const [showAddAPIModal, setShowAddAPIModal] = useState(false);
-  
-  // Simplified mock data to avoid dependency issues
-  const integrations: any[] = [];
-  const realTimeData = {};
+  const { integrations, realTimeData } = useAPIIntegrations();
   
   const hasConnectedAPIs = integrations.length > 0;
-  const hasAIIntegration = integrations.some((int: any) => int.category === 'ai');
-  const hasDataForInsights = false;
+  const hasAIIntegration = integrations.some((int) => int.category === 'ai');
+  const hasDataForInsights = Object.keys(realTimeData).length > 0;
 
   return (
     <div className="space-y-6">
@@ -65,43 +64,37 @@ export const IntegrationsTab = () => {
         </CardContent>
       </Card>
 
-      {/* Simplified API Dashboard */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="w-5 h-5" />
-            Connected APIs
-          </CardTitle>
-          <CardDescription>
-            No APIs connected yet. Start by connecting your first API to see real data.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="text-center py-8">
-          <WifiOff className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No Connected APIs</h3>
-          <p className="text-muted-foreground mb-4">
-            Connect your first API to start seeing real-time data and insights
-          </p>
-          <Button onClick={() => setShowAddAPIModal(true)} className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Connect API
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Connected APIs Dashboard */}
+      <APIConnectorDashboard />
 
-      {/* AI Features Placeholder */}
-      <Card className="border-dashed border-2">
-        <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-          <Database className="w-12 h-12 text-muted-foreground/50 mb-4" />
-          <h3 className="text-lg font-semibold mb-2">AI Features Available</h3>
-          <p className="text-muted-foreground mb-4 max-w-md">
-            Connect an AI API (OpenAI or Claude) to unlock forecasting, smart suggestions, and AI-powered insights.
-          </p>
-          <Button onClick={() => setShowAddAPIModal(true)} variant="outline">
-            Connect AI API
-          </Button>
-        </CardContent>
-      </Card>
+      {/* AI Features */}
+      {hasAIIntegration ? (
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+            <Database className="w-12 h-12 text-green-600 mb-4" />
+            <h3 className="text-lg font-semibold mb-2 text-green-800">AI Features Active</h3>
+            <p className="text-green-700 mb-4 max-w-md">
+              Your AI integration is ready! You can now use forecasting, smart suggestions, and AI-powered insights.
+            </p>
+            <Badge variant="default" className="bg-green-600">
+              AI Ready
+            </Badge>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-dashed border-2">
+          <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+            <Database className="w-12 h-12 text-muted-foreground/50 mb-4" />
+            <h3 className="text-lg font-semibold mb-2">AI Features Available</h3>
+            <p className="text-muted-foreground mb-4 max-w-md">
+              Connect an AI API (OpenAI or Claude) to unlock forecasting, smart suggestions, and AI-powered insights.
+            </p>
+            <Button onClick={() => setShowAddAPIModal(true)} variant="outline">
+              Connect AI API
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Real API Modal */}
       <RealAPIModal 
