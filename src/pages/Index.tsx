@@ -1,17 +1,31 @@
 
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalyticsTab } from "@/components/tabs/AnalyticsTab";
 import { IntegrationsTab } from "@/components/tabs/IntegrationsTab";
 import { TrelloTab } from "@/components/tabs/TrelloTab";
 import { CalendlyTab } from "@/components/tabs/CalendlyTab";
 import { GoogleDriveTab } from "@/components/tabs/GoogleDriveTab";
+import { GoogleCalendarDashboard } from "@/components/tabs/GoogleCalendarDashboard";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Header } from "@/components/layout/Header";
+import { useAPIIntegrations } from "@/hooks/useAPIIntegrations";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("analytics");
+  const { integrations } = useAPIIntegrations();
+
+  // Filter only connected integrations
+  const connectedIntegrations = integrations.filter(int => int.status === 'connected');
+  const hasTrello = connectedIntegrations.some(int => int.provider === 'trello');
+  const hasGoogleCalendar = connectedIntegrations.some(int => int.provider === 'google-calendar');
+  const hasCalendly = connectedIntegrations.some(int => int.provider === 'calendly');
+  const hasGoogleDrive = connectedIntegrations.some(int => int.provider === 'google-drive');
+
+  // Calculate number of tabs to show
+  const baseTabs = 2; // Analytics + Integrations
+  const connectedTabs = [hasTrello, hasGoogleCalendar, hasCalendly, hasGoogleDrive].filter(Boolean).length;
+  const totalTabs = baseTabs + connectedTabs;
 
   return (
     <ProtectedRoute>
@@ -27,12 +41,13 @@ const Index = () => {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className={`grid w-full grid-cols-${Math.min(totalTabs, 6)}`}>
                 <TabsTrigger value="analytics">Analytics</TabsTrigger>
                 <TabsTrigger value="integrations">Integrations</TabsTrigger>
-                <TabsTrigger value="trello">Trello</TabsTrigger>
-                <TabsTrigger value="calendly">Calendly</TabsTrigger>
-                <TabsTrigger value="drive">Google Drive</TabsTrigger>
+                {hasTrello && <TabsTrigger value="trello">Trello</TabsTrigger>}
+                {hasGoogleCalendar && <TabsTrigger value="google-calendar">Google Calendar</TabsTrigger>}
+                {hasCalendly && <TabsTrigger value="calendly">Calendly</TabsTrigger>}
+                {hasGoogleDrive && <TabsTrigger value="drive">Google Drive</TabsTrigger>}
               </TabsList>
 
               <TabsContent value="analytics" className="space-y-4">
@@ -43,17 +58,29 @@ const Index = () => {
                 <IntegrationsTab />
               </TabsContent>
 
-              <TabsContent value="trello" className="space-y-4">
-                <TrelloTab />
-              </TabsContent>
+              {hasTrello && (
+                <TabsContent value="trello" className="space-y-4">
+                  <TrelloTab />
+                </TabsContent>
+              )}
 
-              <TabsContent value="calendly" className="space-y-4">
-                <CalendlyTab />
-              </TabsContent>
+              {hasGoogleCalendar && (
+                <TabsContent value="google-calendar" className="space-y-4">
+                  <GoogleCalendarDashboard />
+                </TabsContent>
+              )}
 
-              <TabsContent value="drive" className="space-y-4">
-                <GoogleDriveTab />
-              </TabsContent>
+              {hasCalendly && (
+                <TabsContent value="calendly" className="space-y-4">
+                  <CalendlyTab />
+                </TabsContent>
+              )}
+
+              {hasGoogleDrive && (
+                <TabsContent value="drive" className="space-y-4">
+                  <GoogleDriveTab />
+                </TabsContent>
+              )}
             </Tabs>
           </div>
         </div>

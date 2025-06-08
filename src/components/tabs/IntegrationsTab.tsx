@@ -2,19 +2,20 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Database, Wifi, WifiOff } from "lucide-react";
+import { Plus, Wifi, WifiOff } from "lucide-react";
 import { useState } from "react";
 import { RealAPIModal } from "@/components/integrations/RealAPIModal";
 import { APIConnectorDashboard } from "@/components/integrations/APIConnectorDashboard";
+import { AskAIPanel } from "@/components/integrations/AskAIPanel";
 import { useAPIIntegrations } from "@/hooks/useAPIIntegrations";
 
 export const IntegrationsTab = () => {
   const [showAddAPIModal, setShowAddAPIModal] = useState(false);
-  const { integrations, realTimeData } = useAPIIntegrations();
+  const { integrations } = useAPIIntegrations();
   
-  const hasConnectedAPIs = integrations.length > 0;
-  const hasAIIntegration = integrations.some((int) => int.category === 'ai');
-  const hasDataForInsights = Object.keys(realTimeData).length > 0;
+  const connectedIntegrations = integrations.filter(int => int.status === 'connected');
+  const hasConnectedAPIs = connectedIntegrations.length > 0;
+  const hasAIIntegration = connectedIntegrations.some((int) => int.category === 'ai');
 
   return (
     <div className="space-y-6">
@@ -24,7 +25,7 @@ export const IntegrationsTab = () => {
           <h2 className="text-3xl font-bold">API Integration Center</h2>
           <p className="text-muted-foreground">
             {hasConnectedAPIs 
-              ? `Manage your ${integrations.length} connected service${integrations.length !== 1 ? 's' : ''} and data sources`
+              ? `Manage your ${connectedIntegrations.length} connected service${connectedIntegrations.length !== 1 ? 's' : ''}`
               : 'Connect your first API to start seeing real-time data'
             }
           </p>
@@ -35,65 +36,49 @@ export const IntegrationsTab = () => {
         </Button>
       </div>
 
-      {/* Connection Status Banner */}
-      <Card className={hasConnectedAPIs ? "border-green-200 bg-green-50" : "border-orange-200 bg-orange-50"}>
-        <CardContent className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-3">
-            {hasConnectedAPIs ? (
+      {/* Connection Status Banner - only show if there are connected APIs */}
+      {hasConnectedAPIs && (
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
               <Wifi className="w-5 h-5 text-green-600" />
-            ) : (
-              <WifiOff className="w-5 h-5 text-orange-600" />
-            )}
-            <div>
-              <h3 className="font-semibold">
-                {hasConnectedAPIs ? 'APIs Connected' : 'No APIs Connected'}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {hasConnectedAPIs 
-                  ? `${integrations.length} real data source${integrations.length !== 1 ? 's' : ''} active`
-                  : 'Connect your first API to see real-time insights'
-                }
-              </p>
+              <div>
+                <h3 className="font-semibold">APIs Connected</h3>
+                <p className="text-sm text-muted-foreground">
+                  {connectedIntegrations.length} real data source{connectedIntegrations.length !== 1 ? 's' : ''} active
+                </p>
+              </div>
             </div>
-          </div>
-          {hasConnectedAPIs && (
             <Badge variant="default" className="bg-green-600">
               Live Data
             </Badge>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Connected APIs Dashboard */}
-      <APIConnectorDashboard />
-
-      {/* AI Features */}
-      {hasAIIntegration ? (
-        <Card className="border-green-200 bg-green-50">
-          <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-            <Database className="w-12 h-12 text-green-600 mb-4" />
-            <h3 className="text-lg font-semibold mb-2 text-green-800">AI Features Active</h3>
-            <p className="text-green-700 mb-4 max-w-md">
-              Your AI integration is ready! You can now use forecasting, smart suggestions, and AI-powered insights.
-            </p>
-            <Badge variant="default" className="bg-green-600">
-              AI Ready
-            </Badge>
           </CardContent>
         </Card>
-      ) : (
-        <Card className="border-dashed border-2">
-          <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-            <Database className="w-12 h-12 text-muted-foreground/50 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">AI Features Available</h3>
-            <p className="text-muted-foreground mb-4 max-w-md">
-              Connect an AI API (OpenAI or Claude) to unlock forecasting, smart suggestions, and AI-powered insights.
-            </p>
-            <Button onClick={() => setShowAddAPIModal(true)} variant="outline">
-              Connect AI API
-            </Button>
+      )}
+
+      {/* No APIs Connected State */}
+      {!hasConnectedAPIs && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <WifiOff className="w-5 h-5 text-orange-600" />
+              <div>
+                <h3 className="font-semibold">No APIs Connected</h3>
+                <p className="text-sm text-muted-foreground">
+                  Connect your first API to see real-time insights
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Connected APIs Dashboard - only show if there are connected APIs */}
+      {hasConnectedAPIs && <APIConnectorDashboard />}
+
+      {/* AI Assistant Panel - only show if AI is connected */}
+      {hasAIIntegration && (
+        <AskAIPanel />
       )}
 
       {/* Real API Modal */}

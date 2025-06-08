@@ -8,14 +8,37 @@ import { MessageSquare, Send, Sparkles, Clock, TrendingUp, Target, Bot, User } f
 import { useState } from "react";
 import { generateAIInsight } from "@/utils/aiService";
 
-const suggestedQueries = [
-  "Which client has the longest open deal?",
-  "What's likely to close this week?",
-  "What should I follow up on today?",
-  "Show me pipeline bottlenecks",
-  "Which rep needs support?",
-  "What's driving our growth this month?"
-];
+const getContextualQueries = (context?: string) => {
+  switch (context) {
+    case 'google-calendar':
+      return [
+        "What's my schedule looking like this week?",
+        "When do I have free time for meetings?",
+        "How many hours am I working this week?",
+        "What meetings should I prioritize?",
+        "Am I overbooked this week?",
+        "When is my next available slot?"
+      ];
+    case 'trello':
+      return [
+        "Which cards need attention?",
+        "What's blocking my progress?",
+        "Which board has the most activity?",
+        "What tasks are overdue?",
+        "Show me high priority items",
+        "What should I work on next?"
+      ];
+    default:
+      return [
+        "Which client has the longest open deal?",
+        "What's likely to close this week?",
+        "What should I follow up on today?",
+        "Show me pipeline bottlenecks",
+        "Which rep needs support?",
+        "What's driving our growth this month?"
+      ];
+  }
+};
 
 interface ChatMessage {
   id: string;
@@ -25,10 +48,19 @@ interface ChatMessage {
   aiResponse?: any;
 }
 
-export const AskAIPanel = () => {
+interface AskAIPanelProps {
+  context?: string;
+}
+
+export const AskAIPanel = ({ context }: AskAIPanelProps) => {
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+
+  const suggestedQueries = getContextualQueries(context);
+  const contextTitle = context === 'google-calendar' ? 'Calendar Assistant' : 
+                     context === 'trello' ? 'Project Assistant' : 
+                     'AI Assistant';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +79,8 @@ export const AskAIPanel = () => {
     setQuery("");
 
     try {
-      const aiResponse = await generateAIInsight(currentQuery);
+      const contextualQuery = context ? `[${context.toUpperCase()} CONTEXT] ${currentQuery}` : currentQuery;
+      const aiResponse = await generateAIInsight(contextualQuery);
       
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -63,7 +96,7 @@ export const AskAIPanel = () => {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: "Sorry, I couldn't process your request. Please try again.",
+        content: "Sorry, I couldn't process your request. Please ensure you have an AI API connected.",
         timestamp: new Date().toLocaleTimeString()
       };
       setChatHistory(prev => [...prev, errorMessage]);
@@ -84,7 +117,8 @@ export const AskAIPanel = () => {
     setIsLoading(true);
 
     try {
-      const aiResponse = await generateAIInsight(suggestedQuery);
+      const contextualQuery = context ? `[${context.toUpperCase()} CONTEXT] ${suggestedQuery}` : suggestedQuery;
+      const aiResponse = await generateAIInsight(contextualQuery);
       
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -100,7 +134,7 @@ export const AskAIPanel = () => {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: "Sorry, I couldn't process your request. Please try again.",
+        content: "Sorry, I couldn't process your request. Please ensure you have an AI API connected.",
         timestamp: new Date().toLocaleTimeString()
       };
       setChatHistory(prev => [...prev, errorMessage]);
@@ -114,10 +148,15 @@ export const AskAIPanel = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-purple-500" />
-          Ask AI Assistant
+          {contextTitle}
         </CardTitle>
         <CardDescription>
-          Get instant insights and answers about your sales data
+          {context === 'google-calendar' 
+            ? 'Get insights about your calendar and schedule'
+            : context === 'trello'
+            ? 'Ask questions about your projects and tasks'
+            : 'Get instant insights and answers about your sales data'
+          }
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -197,7 +236,7 @@ export const AskAIPanel = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex gap-2">
             <Input
-              placeholder="Ask anything about your sales data..."
+              placeholder={`Ask anything about your ${context === 'google-calendar' ? 'calendar' : context === 'trello' ? 'projects' : 'sales data'}...`}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="flex-1"
@@ -234,7 +273,7 @@ export const AskAIPanel = () => {
           <div className="mt-4 p-4 bg-muted/20 rounded-lg text-center">
             <Sparkles className="w-8 h-8 text-purple-500 mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">
-              Start a conversation with your AI assistant to get insights about your sales data.
+              Start a conversation with your {contextTitle.toLowerCase()} to get insights.
             </p>
           </div>
         )}

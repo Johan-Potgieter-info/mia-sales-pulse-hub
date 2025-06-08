@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { APIIntegration, RealTimeData, AIProvider } from '@/types/apiIntegrations';
@@ -80,6 +79,17 @@ export const useAPIIntegrations = () => {
       return;
     }
 
+    // Check for existing Trello connection
+    const existingTrello = integrations.find(int => int.provider === 'trello');
+    if (existingTrello) {
+      toast({
+        title: "Already Connected",
+        description: "Trello is already connected. Disconnect first to add a new connection.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const result = await trelloConnect(apiKey, token);
@@ -118,13 +128,24 @@ export const useAPIIntegrations = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [trelloConnect, loadIntegrations, toast, user]);
+  }, [trelloConnect, loadIntegrations, toast, user, integrations]);
 
   const connectGoogleCalendar = useCallback(async (accessToken: string) => {
     if (!user) {
       toast({
         title: "Authentication Required",
         description: "Please sign in to connect APIs",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check for existing Google Calendar connection
+    const existingCalendar = integrations.find(int => int.provider === 'google-calendar');
+    if (existingCalendar) {
+      toast({
+        title: "Already Connected",
+        description: "Google Calendar is already connected. Disconnect first to add a new connection.",
         variant: "destructive"
       });
       return;
@@ -167,13 +188,24 @@ export const useAPIIntegrations = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [googleConnect, loadIntegrations, toast, user]);
+  }, [googleConnect, loadIntegrations, toast, user, integrations]);
 
   const connectAIAPI = useCallback(async (apiKey: string, provider: AIProvider, model: string) => {
     if (!user) {
       toast({
         title: "Authentication Required",
         description: "Please sign in to connect APIs",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check for existing AI connection of the same provider
+    const existingAI = integrations.find(int => int.provider === provider && int.category === 'ai');
+    if (existingAI) {
+      toast({
+        title: "Already Connected",
+        description: `${provider.toUpperCase()} AI is already connected. Disconnect first to add a new connection.`,
         variant: "destructive"
       });
       return;
@@ -207,7 +239,7 @@ export const useAPIIntegrations = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [aiConnect, loadIntegrations, toast, user]);
+  }, [aiConnect, loadIntegrations, toast, user, integrations]);
 
   const refreshIntegration = useCallback(async (integrationId: string) => {
     const integration = integrations.find(int => int.id === integrationId);
@@ -268,7 +300,7 @@ export const useAPIIntegrations = () => {
   }, [integrations, loadIntegrations, toast, user]);
 
   return {
-    integrations: integrations.filter(int => int.hasData || int.status === 'error'),
+    integrations: integrations.filter(int => int.hasData || int.status === 'error' || int.category === 'ai'),
     realTimeData,
     isLoading,
     connectTrelloAPI,
