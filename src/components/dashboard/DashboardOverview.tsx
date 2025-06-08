@@ -68,7 +68,7 @@ export const DashboardOverview = ({ onNavigateToIntegrations }: DashboardOvervie
           value={`$${mockData.totalRevenue.toLocaleString()}`}
           change="+12.5%"
           trend="up"
-          icon={<DollarSign className="w-4 h-4" />}
+          icon={DollarSign}
           isLive={hasConnectedAPIs}
         />
         <KPICard
@@ -76,7 +76,7 @@ export const DashboardOverview = ({ onNavigateToIntegrations }: DashboardOvervie
           value={mockData.newLeads.toString()}
           change="+8.2%"
           trend="up"
-          icon={<Users className="w-4 h-4" />}
+          icon={Users}
           isLive={hasConnectedAPIs}
         />
         <KPICard
@@ -84,7 +84,7 @@ export const DashboardOverview = ({ onNavigateToIntegrations }: DashboardOvervie
           value={`${mockData.conversionRate}%`}
           change="-2.1%"
           trend="down"
-          icon={<Target className="w-4 h-4" />}
+          icon={Target}
           isLive={hasConnectedAPIs}
         />
         <KPICard
@@ -92,7 +92,7 @@ export const DashboardOverview = ({ onNavigateToIntegrations }: DashboardOvervie
           value={`$${mockData.averageDealSize.toLocaleString()}`}
           change="+5.7%"
           trend="up"
-          icon={<BarChart3 className="w-4 h-4" />}
+          icon={BarChart3}
           isLive={hasConnectedAPIs}
         />
       </div>
