@@ -10,20 +10,22 @@ export const useCalendlyAPI = () => {
   const connectCalendlyAPI = useCallback(async (accessToken: string) => {
     try {
       console.log('Connecting to Calendly API...');
-      const response = await fetch('https://api.calendly.com/users/me', {
+      
+      // Get user information
+      const userResponse = await fetch('https://api.calendly.com/users/me', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         }
       });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Calendly API error:', response.status, errorText);
-        throw new Error(`HTTP ${response.status}: ${errorText || 'Failed to connect to Calendly'}`);
+      if (!userResponse.ok) {
+        const errorText = await userResponse.text();
+        console.error('Calendly API error:', userResponse.status, errorText);
+        throw new Error(`HTTP ${userResponse.status}: ${errorText || 'Failed to connect to Calendly'}`);
       }
       
-      const userData = await response.json();
+      const userData = await userResponse.json();
       console.log('Calendly user data retrieved:', userData);
 
       // Get event types
@@ -36,6 +38,28 @@ export const useCalendlyAPI = () => {
 
       const eventTypesData = await eventTypesResponse.json();
       const eventTypes = eventTypesData.collection || [];
+
+      // Get recent scheduled events (last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const eventsResponse = await fetch(
+        `https://api.calendly.com/scheduled_events?user=${userData.resource.uri}&min_start_time=${thirtyDaysAgo.toISOString()}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      let scheduledEvents = [];
+      if (eventsResponse.ok) {
+        const eventsData = await eventsResponse.json();
+        scheduledEvents = eventsData.collection || [];
+      } else {
+        console.warn('Could not fetch scheduled events, but continuing with event types');
+      }
       
       const integration: APIIntegration = {
         id: 'calendly',
@@ -50,16 +74,24 @@ export const useCalendlyAPI = () => {
         hasData: eventTypes.length > 0,
         metrics: {
           'Event Types': eventTypes.length,
+          'Recent Events': scheduledEvents.length,
           'Status': 'Connected'
         }
       };
 
       toast({
         title: "Calendly Connected",
-        description: `Successfully connected with ${eventTypes.length} event types`,
+        description: `Successfully connected with ${eventTypes.length} event types and ${scheduledEvents.length} recent events`,
       });
 
-      return { integration, data: { eventTypes, user: userData.resource } };
+      return { 
+        integration, 
+        data: { 
+          eventTypes, 
+          user: userData.resource,
+          scheduledEvents: scheduledEvents
+        } 
+      };
 
     } catch (error) {
       console.error('Calendly connection failed:', error);

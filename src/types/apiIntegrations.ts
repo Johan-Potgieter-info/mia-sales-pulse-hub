@@ -28,6 +28,7 @@ export interface RealTimeData {
   calendly?: {
     eventTypes: any[];
     user: any;
+    scheduledEvents?: any[];
   };
   googleSheets?: {
     sheets: any[];

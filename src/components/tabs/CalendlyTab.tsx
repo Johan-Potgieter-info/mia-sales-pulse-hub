@@ -2,218 +2,264 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Calendar, Clock, Users, CheckCircle, XCircle, AlertCircle } from "lucide-react";
-
-const mockCalendlyData = {
-  summary: {
-    totalBookings: 127,
-    confirmedMeetings: 98,
-    noShows: 12,
-    conversionRate: 77.2
-  },
-  recentAppointments: [
-    {
-      id: 1,
-      clientName: "Sarah Johnson",
-      meetingType: "Sales Discovery Call",
-      scheduledTime: "2024-06-08 14:00",
-      status: "confirmed",
-      duration: 30
-    },
-    {
-      id: 2,
-      clientName: "Tech Solutions Ltd",
-      meetingType: "Product Demo",
-      scheduledTime: "2024-06-08 16:30",
-      status: "pending",
-      duration: 60
-    },
-    {
-      id: 3,
-      clientName: "Mike Chen",
-      meetingType: "Follow-up Meeting",
-      scheduledTime: "2024-06-09 10:00",
-      status: "confirmed",
-      duration: 30
-    },
-    {
-      id: 4,
-      clientName: "Global Industries",
-      meetingType: "Contract Discussion",
-      scheduledTime: "2024-06-09 15:00",
-      status: "no-show",
-      duration: 45
-    }
-  ],
-  weeklyStats: [
-    { day: "Mon", bookings: 8 },
-    { day: "Tue", bookings: 12 },
-    { day: "Wed", bookings: 15 },
-    { day: "Thu", bookings: 10 },
-    { day: "Fri", bookings: 18 },
-    { day: "Sat", bookings: 3 },
-    { day: "Sun", bookings: 1 }
-  ]
-};
+import { Calendar, Clock, Users, CheckCircle, XCircle, AlertCircle, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAPIIntegrations } from "@/hooks/useAPIIntegrations";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const CalendlyTab = () => {
-  const { summary, recentAppointments } = mockCalendlyData;
+  const { realTimeData, integrations } = useAPIIntegrations();
+  
+  const calendlyIntegration = integrations.find(int => int.provider === 'calendly' && int.status === 'connected');
+  const calendlyData = realTimeData.calendly;
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'pending':
-        return <AlertCircle className="w-4 h-4 text-orange-500" />;
-      case 'no-show':
-        return <XCircle className="w-4 h-4 text-red-500" />;
-      default:
-        return <Clock className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      confirmed: "default",
-      pending: "secondary", 
-      "no-show": "destructive"
-    } as const;
-    
+  if (!calendlyIntegration) {
     return (
-      <Badge variant={variants[status as keyof typeof variants] || "outline"}>
-        {status.replace('-', ' ')}
-      </Badge>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center space-y-4">
+          <Calendar className="w-16 h-16 text-muted-foreground mx-auto" />
+          <div>
+            <h3 className="text-lg font-semibold">No Calendly Connection</h3>
+            <p className="text-muted-foreground">Connect your Calendly account to view scheduling data</p>
+          </div>
+        </div>
+      </div>
     );
-  };
+  }
+
+  if (!calendlyData) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center space-y-4">
+          <Clock className="w-16 h-16 text-muted-foreground mx-auto animate-spin" />
+          <div>
+            <h3 className="text-lg font-semibold">Loading Calendly Data</h3>
+            <p className="text-muted-foreground">Fetching your scheduling information...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const { eventTypes = [], user } = calendlyData;
+  const totalEventTypes = eventTypes.length;
 
   return (
     <div className="space-y-6">
+      {/* User Information Card */}
+      {user && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-500" />
+              Calendly Account: {user.name}
+            </CardTitle>
+            <CardDescription>
+              Connected to {user.email} • Last synced: {calendlyIntegration.lastSync}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm">Timezone: {user.timezone}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                <a 
+                  href={user.scheduling_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  Visit Scheduling Page
+                </a>
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm">Locale: {user.locale}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+            <CardTitle className="text-sm font-medium">Event Types</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.totalBookings}</div>
-            <p className="text-xs text-muted-foreground">This month</p>
+            <div className="text-2xl font-bold">{totalEventTypes}</div>
+            <p className="text-xs text-muted-foreground">Available booking types</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Confirmed</CardTitle>
+            <CardTitle className="text-sm font-medium">Account Status</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.confirmedMeetings}</div>
-            <p className="text-xs text-muted-foreground">Meetings attended</p>
+            <div className="text-2xl font-bold">Active</div>
+            <p className="text-xs text-muted-foreground">Calendly connection</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">No Shows</CardTitle>
-            <XCircle className="h-4 w-4 text-red-500" />
+            <CardTitle className="text-sm font-medium">Time Format</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.noShows}</div>
-            <p className="text-xs text-muted-foreground">Missed appointments</p>
+            <div className="text-2xl font-bold">{user?.time_notation || '12h'}</div>
+            <p className="text-xs text-muted-foreground">Display format</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Show Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">Integration</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.conversionRate}%</div>
-            <Progress value={summary.conversionRate} className="mt-2" />
+            <div className="text-2xl font-bold">Connected</div>
+            <Progress value={100} className="mt-2" />
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent Appointments */}
+      {/* Event Types */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Appointments</CardTitle>
-          <CardDescription>Latest scheduled meetings and their status</CardDescription>
+          <CardTitle>Event Types</CardTitle>
+          <CardDescription>Your available Calendly meeting types</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {recentAppointments.map((appointment) => (
-              <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-4">
-                  {getStatusIcon(appointment.status)}
-                  <div>
-                    <h4 className="font-medium">{appointment.clientName}</h4>
-                    <p className="text-sm text-muted-foreground">{appointment.meetingType}</p>
-                  </div>
-                </div>
-                <div className="text-right space-y-1">
-                  <div className="text-sm">{new Date(appointment.scheduledTime).toLocaleString()}</div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{appointment.duration}min</span>
-                    {getStatusBadge(appointment.status)}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          {eventTypes.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Duration</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {eventTypes.map((eventType: any) => (
+                  <TableRow key={eventType.uri}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{eventType.name}</div>
+                        {eventType.description_plain && (
+                          <div className="text-sm text-muted-foreground line-clamp-2">
+                            {eventType.description_plain}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {eventType.duration} min
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={eventType.kind === 'solo' ? 'default' : 'secondary'}>
+                        {eventType.kind}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={eventType.active ? 'default' : 'secondary'}>
+                        {eventType.active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => window.open(eventType.scheduling_url, '_blank')}
+                      >
+                        <ExternalLink className="w-4 h-4 mr-1" />
+                        Book
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="text-center py-8">
+              <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Event Types Found</h3>
+              <p className="text-muted-foreground">
+                Create event types in your Calendly account to see them here.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Meeting Types Performance */}
+      {/* Analytics Section */}
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Meeting Types</CardTitle>
-            <CardDescription>Performance by meeting type</CardDescription>
+            <CardTitle>Booking Analytics</CardTitle>
+            <CardDescription>Event type performance overview</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Sales Discovery Calls</span>
-              <div className="flex items-center gap-2">
-                <Progress value={85} className="w-20" />
-                <span className="text-sm text-muted-foreground">85%</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Product Demos</span>
-              <div className="flex items-center gap-2">
-                <Progress value={72} className="w-20" />
-                <span className="text-sm text-muted-foreground">72%</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Follow-up Meetings</span>
-              <div className="flex items-center gap-2">
-                <Progress value={91} className="w-20" />
-                <span className="text-sm text-muted-foreground">91%</span>
-              </div>
-            </div>
+            {eventTypes.length > 0 ? (
+              eventTypes.map((eventType: any, index: number) => (
+                <div key={eventType.uri} className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{eventType.name}</span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={eventType.active ? 'default' : 'secondary'}>
+                      {eventType.duration}min
+                    </Badge>
+                    <Badge variant="outline">
+                      {eventType.kind}
+                    </Badge>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">No event types to analyze</p>
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Time Slots Performance</CardTitle>
-            <CardDescription>Best performing time slots</CardDescription>
+            <CardTitle>Integration Health</CardTitle>
+            <CardDescription>Connection status and data sync</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm">Morning (9-12 PM)</span>
-              <Badge>High conversion</Badge>
+              <span className="text-sm">API Connection</span>
+              <Badge variant="default">
+                <CheckCircle className="w-3 h-3 mr-1" />
+                Connected
+              </Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm">Afternoon (1-5 PM)</span>
-              <Badge variant="secondary">Medium conversion</Badge>
+              <span className="text-sm">Data Sync</span>
+              <Badge variant="default">
+                <CheckCircle className="w-3 h-3 mr-1" />
+                Active
+              </Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm">Evening (6-8 PM)</span>
-              <Badge variant="outline">Low conversion</Badge>
+              <span className="text-sm">Event Types Loaded</span>
+              <Badge variant="outline">{totalEventTypes}</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Last Updated</span>
+              <span className="text-xs text-muted-foreground">
+                {calendlyIntegration.lastSync ? new Date(calendlyIntegration.lastSync).toLocaleString() : 'Never'}
+              </span>
             </div>
           </CardContent>
         </Card>
