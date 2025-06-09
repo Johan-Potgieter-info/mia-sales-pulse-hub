@@ -6,6 +6,7 @@ import { Calendar, Trello, MessageSquare } from "lucide-react";
 import { AIConnectionForm } from "./forms/AIConnectionForm";
 import { TrelloConnectionForm } from "./forms/TrelloConnectionForm";
 import { GoogleCalendarConnectionForm } from "./forms/GoogleCalendarConnectionForm";
+import { CalendlyConnectionForm } from "./forms/CalendlyConnectionForm";
 
 interface RealAPIModalProps {
   open: boolean;
@@ -13,7 +14,7 @@ interface RealAPIModalProps {
 }
 
 export const RealAPIModal = ({ open, onOpenChange }: RealAPIModalProps) => {
-  const { connectTrelloAPI, connectGoogleCalendar, connectAIAPI, isLoading } = useAPIIntegrations();
+  const { connectTrelloAPI, connectGoogleCalendar, connectCalendlyAPI, connectAIAPI, isLoading } = useAPIIntegrations();
 
   const handleTrelloConnect = async (apiKey: string, token: string) => {
     await connectTrelloAPI(apiKey, token);
@@ -22,6 +23,11 @@ export const RealAPIModal = ({ open, onOpenChange }: RealAPIModalProps) => {
 
   const handleGoogleConnect = async (accessToken: string) => {
     await connectGoogleCalendar(accessToken);
+    onOpenChange(false);
+  };
+
+  const handleCalendlyConnect = async (accessToken: string) => {
+    await connectCalendlyAPI(accessToken);
     onOpenChange(false);
   };
 
@@ -41,7 +47,7 @@ export const RealAPIModal = ({ open, onOpenChange }: RealAPIModalProps) => {
         </DialogHeader>
         
         <Tabs defaultValue="ai" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="ai" className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
               AI APIs
@@ -53,6 +59,10 @@ export const RealAPIModal = ({ open, onOpenChange }: RealAPIModalProps) => {
             <TabsTrigger value="google" className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               Google
+            </TabsTrigger>
+            <TabsTrigger value="calendly" className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Calendly
             </TabsTrigger>
           </TabsList>
 
@@ -66,6 +76,10 @@ export const RealAPIModal = ({ open, onOpenChange }: RealAPIModalProps) => {
 
           <TabsContent value="google" className="space-y-4">
             <GoogleCalendarConnectionForm onConnect={handleGoogleConnect} isLoading={isLoading} />
+          </TabsContent>
+
+          <TabsContent value="calendly" className="space-y-4">
+            <CalendlyConnectionForm onConnect={handleCalendlyConnect} isLoading={isLoading} />
           </TabsContent>
         </Tabs>
       </DialogContent>

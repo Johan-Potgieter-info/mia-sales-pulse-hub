@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { APIIntegration, RealTimeData, AIProvider } from '@/types/apiIntegrations';
@@ -9,6 +8,7 @@ import { integrationService } from '@/services/integrationService';
 import { credentialsService } from '@/services/credentialsService';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useCalendlyAPI } from '@/hooks/integrations/useCalendlyAPI';
 
 export const useAPIIntegrations = () => {
   const [integrations, setIntegrations] = useState<APIIntegration[]>([]);
@@ -20,6 +20,7 @@ export const useAPIIntegrations = () => {
   const { connectTrelloAPI: trelloConnect } = useTrelloAPI();
   const { connectGoogleCalendar: googleConnect } = useGoogleCalendarAPI();
   const { connectAIAPI: aiConnect } = useAIAPI();
+  const { connectCalendlyAPI: calendlyConnect } = useCalendlyAPI();
 
   // Load integrations from database
   const loadIntegrations = useCallback(async () => {
@@ -263,6 +264,66 @@ export const useAPIIntegrations = () => {
     }
   }, [aiConnect, loadIntegrations, toast, user, integrations]);
 
+  const connectCalendlyAPI = useCallback(async (accessToken: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to connect APIs",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check for existing Calendly connection
+    const existingCalendly = integrations.find(int => int.provider === 'calendly');
+    if (existingCalendly) {
+      toast({
+        title: "Already Connected",
+        description: "Calendly is already connected. Disconnect first to add a new connection.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await calendlyConnect(accessToken);
+      
+      // Store in database
+      const dbIntegration = await integrationService.createIntegration(
+        'Calendly',
+        'calendly',
+        'scheduling',
+        { access_token: accessToken }
+      );
+
+      if (result.data) {
+        await integrationService.storeIntegrationData(
+          dbIntegration.id,
+          'event_types',
+          result.data
+        );
+        setRealTimeData(prev => ({ ...prev, calendly: result.data }));
+      }
+
+      await loadIntegrations();
+
+      toast({
+        title: "Calendly Connected",
+        description: "Successfully connected to Calendly API",
+      });
+    } catch (error) {
+      console.error('Calendly connection failed:', error);
+      toast({
+        title: "Connection Failed",
+        description: "Failed to connect to Calendly API",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [calendlyConnect, loadIntegrations, toast, user, integrations]);
+
   const refreshIntegration = useCallback(async (integrationId: string) => {
     const integration = integrations.find(int => int.id === integrationId);
     if (!integration || !user) return;
@@ -278,6 +339,8 @@ export const useAPIIntegrations = () => {
         await connectTrelloAPI(credentials.api_key, credentials.access_token);
       } else if (integration.provider === 'google-calendar' && credentials.access_token) {
         await connectGoogleCalendar(credentials.access_token);
+      } else if (integration.provider === 'calendly' && credentials.access_token) {
+        await connectCalendlyAPI(credentials.access_token);
       } else {
         await integrationService.updateIntegrationStatus(integrationId, 'connected');
         await loadIntegrations();
@@ -286,7 +349,7 @@ export const useAPIIntegrations = () => {
       await integrationService.updateIntegrationStatus(integrationId, 'error');
       await loadIntegrations();
     }
-  }, [integrations, connectTrelloAPI, connectGoogleCalendar, loadIntegrations, user]);
+  }, [integrations, connectTrelloAPI, connectGoogleCalendar, connectCalendlyAPI, loadIntegrations, user]);
 
   const disconnectIntegration = useCallback(async (integrationId: string) => {
     if (!user) return;
@@ -302,6 +365,7 @@ export const useAPIIntegrations = () => {
         if (integration) {
           if (integration.provider === 'trello') delete newData.trello;
           if (integration.provider === 'google-calendar') delete newData.googleCalendar;
+          if (integration.provider === 'calendly') delete newData.calendly;
           if (integration.category === 'ai') delete newData.aiInsights;
         }
         return newData;
@@ -327,6 +391,7 @@ export const useAPIIntegrations = () => {
     isLoading,
     connectTrelloAPI,
     connectGoogleCalendar,
+    connectCalendlyAPI,
     connectAIAPI,
     refreshIntegration,
     disconnectIntegration

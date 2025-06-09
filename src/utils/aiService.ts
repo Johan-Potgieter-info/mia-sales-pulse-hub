@@ -1,184 +1,159 @@
 
-// Mock AI service for demonstrating AI insights functionality
-// In production, this would connect to actual AI APIs
+import { supabase } from '@/integrations/supabase/client';
+import { credentialsService } from '@/services/credentialsService';
 
-export interface AIInsight {
-  id: string;
-  type: 'trend' | 'alert' | 'insight' | 'recommendation';
+interface AIInsight {
   title: string;
   content: string;
-  confidence: 'High' | 'Medium' | 'Low';
-  timestamp: string;
-  metadata?: {
-    dataPoints?: string[];
-    metrics?: Record<string, number>;
+  confidence: string;
+  metadata: {
+    metrics: Record<string, string | number>;
   };
 }
-
-export const mockAIInsights: AIInsight[] = [
-  {
-    id: '1',
-    type: 'trend',
-    title: 'Revenue Growth Acceleration',
-    content: 'Your June revenue is 18% above forecast. The main drivers are increased conversion rates from referral sources and shorter sales cycles.',
-    confidence: 'High',
-    timestamp: '2 hours ago',
-    metadata: {
-      dataPoints: ['revenue', 'conversion_rate', 'sales_cycle'],
-      metrics: { growth_rate: 18, forecast_beat: 0.18 }
-    }
-  },
-  {
-    id: '2',
-    type: 'alert',
-    title: 'Pipeline Bottleneck Detected',
-    content: 'Deals are accumulating in the "Proposal" stage. Consider reviewing proposal templates or offering more competitive pricing.',
-    confidence: 'Medium',
-    timestamp: '5 hours ago',
-    metadata: {
-      dataPoints: ['pipeline_velocity', 'proposal_stage'],
-      metrics: { bottleneck_score: 0.75 }
-    }
-  },
-  {
-    id: '3',
-    type: 'insight',
-    title: 'Optimization Opportunity',
-    content: 'Website leads convert 15% better than other sources. Consider increasing marketing spend on SEO and content marketing.',
-    confidence: 'High',
-    timestamp: '1 day ago',
-    metadata: {
-      dataPoints: ['lead_sources', 'conversion_rates'],
-      metrics: { website_conversion: 0.205, avg_conversion: 0.178 }
-    }
-  }
-];
 
 export const generateAIInsight = async (query: string): Promise<AIInsight> => {
-  // Simulate AI processing delay
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  
-  // Mock response based on query keywords
-  const lowerQuery = query.toLowerCase();
-  
-  if (lowerQuery.includes('conversion') || lowerQuery.includes('drop')) {
-    return {
-      id: Date.now().toString(),
-      type: 'insight',
-      title: 'Conversion Analysis',
-      content: 'Your conversion rates show seasonal patterns. Summer months typically see a 5-8% dip due to vacation schedules. Consider adjusting your follow-up cadence during this period.',
-      confidence: 'High',
-      timestamp: 'Just now',
-      metadata: {
-        dataPoints: ['seasonal_trends', 'conversion_rates'],
-        metrics: { seasonal_impact: -0.06 }
-      }
-    };
-  }
-  
-  if (lowerQuery.includes('month') || lowerQuery.includes('change')) {
-    return {
-      id: Date.now().toString(),
-      type: 'trend',
-      title: 'Monthly Performance Update',
-      content: 'This month shows strong performance across all metrics. Key highlights: 127 appointments booked (+12.5%), deal value increased to R486K (+18.2%), and sales cycle shortened by 5.3%.',
-      confidence: 'High',
-      timestamp: 'Just now',
-      metadata: {
-        dataPoints: ['appointments', 'deal_value', 'sales_cycle'],
-        metrics: { appointments_growth: 0.125, value_growth: 0.182 }
-      }
-    };
-  }
-  
-  if (lowerQuery.includes('rep') || lowerQuery.includes('perform')) {
-    return {
-      id: Date.now().toString(),
-      type: 'insight',
-      title: 'Top Performer Analysis',
-      content: 'Sarah Johnson leads in conversion rates (32%) while Mike Chen excels in deal volume (23 deals closed). Consider having Sarah mentor the team on closing techniques.',
-      confidence: 'High',
-      timestamp: 'Just now',
-      metadata: {
-        dataPoints: ['rep_performance', 'conversion_rates'],
-        metrics: { top_conversion: 0.32, top_volume: 23 }
-      }
-    };
-  }
-  
-  if (lowerQuery.includes('pipeline')) {
-    return {
-      id: Date.now().toString(),
-      type: 'recommendation',
-      title: 'Pipeline Optimization',
-      content: 'Your pipeline is healthy but could benefit from more top-of-funnel activity. Consider increasing lead generation efforts to maintain momentum.',
-      confidence: 'Medium',
-      timestamp: 'Just now',
-      metadata: {
-        dataPoints: ['pipeline_health', 'lead_generation'],
-        metrics: { pipeline_velocity: 0.85 }
-      }
-    };
-  }
-  
-  // Default response
-  return {
-    id: Date.now().toString(),
-    type: 'insight',
-    title: 'General Analysis',
-    content: 'Based on your current data, you\'re performing well across most metrics. Focus on maintaining consistency in your sales process and continue monitoring key conversion points.',
-    confidence: 'Medium',
-    timestamp: 'Just now',
-    metadata: {
-      dataPoints: ['overall_performance'],
-      metrics: { health_score: 0.78 }
+  try {
+    // Get the current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
     }
-  };
-};
 
-// Simulate WebSocket connection for real-time insights
-export class AIInsightsService {
-  private listeners: ((insight: AIInsight) => void)[] = [];
-  private intervalId: NodeJS.Timeout | null = null;
+    // Get AI integrations for the user
+    const { data: integrations, error } = await supabase
+      .from('api_integrations')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('category', 'ai')
+      .eq('status', 'connected');
 
-  subscribe(callback: (insight: AIInsight) => void) {
-    this.listeners.push(callback);
+    if (error) {
+      console.error('Error fetching AI integrations:', error);
+      throw new Error('Failed to get AI integrations');
+    }
+
+    if (!integrations || integrations.length === 0) {
+      throw new Error('No AI API connected. Please connect an AI API first.');
+    }
+
+    // Use the first available AI integration
+    const aiIntegration = integrations[0];
     
-    // Start periodic insights if this is the first subscriber
-    if (this.listeners.length === 1) {
-      this.startInsightGeneration();
-    }
-  }
-
-  unsubscribe(callback: (insight: AIInsight) => void) {
-    this.listeners = this.listeners.filter(listener => listener !== callback);
+    // Get the API key for this integration
+    const credentials = await credentialsService.getIntegrationCredentials(aiIntegration.id);
     
-    // Stop periodic insights if no subscribers
-    if (this.listeners.length === 0) {
-      this.stopInsightGeneration();
+    if (!credentials.api_key) {
+      throw new Error('No API key found for AI integration');
     }
-  }
 
-  private startInsightGeneration() {
-    // Generate a new insight every 5 minutes (for demo purposes)
-    this.intervalId = setInterval(() => {
-      const randomInsight = mockAIInsights[Math.floor(Math.random() * mockAIInsights.length)];
-      const newInsight = {
-        ...randomInsight,
-        id: Date.now().toString(),
-        timestamp: 'Just now'
+    let response: Response;
+    let result: any;
+
+    if (aiIntegration.provider === 'openai') {
+      console.log('Using OpenAI for query:', query);
+      response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${credentials.api_key}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: credentials.model || 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a business intelligence assistant. Provide concise, actionable insights based on the user\'s query. Focus on practical recommendations and key metrics.'
+            },
+            {
+              role: 'user',
+              content: query
+            }
+          ],
+          max_tokens: 300,
+          temperature: 0.7
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(`OpenAI API error: ${response.status} - ${errorData?.error?.message || 'Unknown error'}`);
+      }
+
+      result = await response.json();
+      const content = result.choices[0]?.message?.content || 'No response generated';
+
+      return {
+        title: 'AI Insight',
+        content,
+        confidence: 'High',
+        metadata: {
+          metrics: {
+            'Model': credentials.model || 'gpt-4o-mini',
+            'Provider': 'OpenAI',
+            'Tokens': result.usage?.total_tokens || 0
+          }
+        }
       };
-      
-      this.listeners.forEach(listener => listener(newInsight));
-    }, 300000); // 5 minutes
-  }
 
-  private stopInsightGeneration() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
+    } else if (aiIntegration.provider === 'claude') {
+      console.log('Using Claude for query:', query);
+      response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': credentials.api_key,
+          'Content-Type': 'application/json',
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: credentials.model || 'claude-3-haiku-20240307',
+          max_tokens: 300,
+          messages: [
+            {
+              role: 'user',
+              content: `You are a business intelligence assistant. Provide concise, actionable insights based on this query: ${query}`
+            }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(`Claude API error: ${response.status} - ${errorData?.error?.message || 'Unknown error'}`);
+      }
+
+      result = await response.json();
+      const content = result.content[0]?.text || 'No response generated';
+
+      return {
+        title: 'AI Insight',
+        content,
+        confidence: 'High',
+        metadata: {
+          metrics: {
+            'Model': credentials.model || 'claude-3-haiku-20240307',
+            'Provider': 'Anthropic',
+            'Usage': result.usage?.output_tokens || 0
+          }
+        }
+      };
     }
-  }
-}
 
-export const aiInsightsService = new AIInsightsService();
+    throw new Error(`Unsupported AI provider: ${aiIntegration.provider}`);
+
+  } catch (error) {
+    console.error('AI service error:', error);
+    
+    // Return a proper error response instead of fallback text
+    return {
+      title: 'AI Service Error',
+      content: error instanceof Error ? error.message : 'Failed to generate AI insight. Please check your AI API connection.',
+      confidence: 'Low',
+      metadata: {
+        metrics: {
+          'Status': 'Error',
+          'Provider': 'None'
+        }
+      }
+    };
+  }
+};
