@@ -101,14 +101,10 @@ export const useCalendlyV2API = () => {
 
   const getConnections = useCallback(async (): Promise<CalendlyConnection[]> => {
     try {
-      const { data, error } = await supabase
-        .from('calendly_connections')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.functions.invoke('calendly-get-connections');
 
       if (error) throw error;
-      return data || [];
+      return data?.connections || [];
       
     } catch (error) {
       console.error('Failed to get connections:', error);
@@ -149,10 +145,9 @@ export const useCalendlyV2API = () => {
 
   const disconnectConnection = useCallback(async (connectionId: string) => {
     try {
-      const { error } = await supabase
-        .from('calendly_connections')
-        .update({ is_active: false })
-        .eq('id', connectionId);
+      const { error } = await supabase.functions.invoke('calendly-disconnect', {
+        body: { connection_id: connectionId }
+      });
 
       if (error) throw error;
 
@@ -173,20 +168,10 @@ export const useCalendlyV2API = () => {
 
   const getWebhookEvents = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('calendly_webhook_events')
-        .select(`
-          *,
-          calendly_connections!inner(
-            calendly_user_uri,
-            calendly_organization_uri
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      const { data, error } = await supabase.functions.invoke('calendly-get-webhook-events');
 
       if (error) throw error;
-      return data || [];
+      return data?.events || [];
       
     } catch (error) {
       console.error('Failed to get webhook events:', error);

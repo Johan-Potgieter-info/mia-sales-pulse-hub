@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import { GoogleOAuthCallback } from "./pages/GoogleOAuthCallback";
+import GoogleOAuthCallback from "./pages/GoogleOAuthCallback";
 import { CalendlyOAuthCallback } from "./pages/CalendlyOAuthCallback";
 
 const queryClient = new QueryClient();
