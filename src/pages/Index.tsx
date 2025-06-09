@@ -48,17 +48,20 @@ const Index = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="relative w-full">
                 <Carousel className="w-full max-w-full">
-                  <CarouselContent className="-ml-2 md:-ml-4">
-                    {allTabs.map((tab) => (
-                      <CarouselItem key={tab.value} className="pl-2 md:pl-4 basis-auto">
-                        <TabsTrigger 
-                          value={tab.value}
-                          className="whitespace-nowrap px-4 py-2 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground"
-                        >
-                          {tab.label}
-                        </TabsTrigger>
-                      </CarouselItem>
-                    ))}
+                  <CarouselContent className="-ml-1">
+                    <CarouselItem className="pl-1 basis-auto">
+                      <TabsList className="h-10 p-1 bg-muted rounded-md">
+                        {allTabs.map((tab) => (
+                          <TabsTrigger 
+                            key={tab.value}
+                            value={tab.value}
+                            className="whitespace-nowrap px-4 py-2 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground shrink-0"
+                          >
+                            {tab.label}
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                    </CarouselItem>
                   </CarouselContent>
                   <CarouselPrevious className="left-0 h-8 w-8" />
                   <CarouselNext className="right-0 h-8 w-8" />
