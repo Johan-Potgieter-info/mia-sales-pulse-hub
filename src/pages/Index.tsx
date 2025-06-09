@@ -63,8 +63,8 @@ const Index = () => {
                       </TabsList>
                     </CarouselItem>
                   </CarouselContent>
-                  <CarouselPrevious className="left-0 h-8 w-8" />
-                  <CarouselNext className="right-0 h-8 w-8" />
+                  <CarouselPrevious />
+                  <CarouselNext />
                 </Carousel>
               </div>
 
