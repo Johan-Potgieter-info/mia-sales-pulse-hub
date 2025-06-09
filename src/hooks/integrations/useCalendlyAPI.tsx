@@ -36,6 +36,12 @@ export const useCalendlyAPI = () => {
         }
       });
 
+      if (!eventTypesResponse.ok) {
+        const errorText = await eventTypesResponse.text();
+        console.error('Calendly event types error:', eventTypesResponse.status, errorText);
+        throw new Error(`HTTP ${eventTypesResponse.status}: ${errorText || 'Failed to fetch event types'}`);
+      }
+
       const eventTypesData = await eventTypesResponse.json();
       const eventTypes = eventTypesData.collection || [];
 
