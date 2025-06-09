@@ -7,7 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import GoogleOAuthCallbackPage from "./pages/GoogleOAuthCallback";
+import { GoogleOAuthCallback } from "./pages/GoogleOAuthCallback";
+import { CalendlyOAuthCallback } from "./pages/CalendlyOAuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -20,8 +21,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/oauth/google/callback" element={<GoogleOAuthCallbackPage />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="/google-oauth-callback" element={<GoogleOAuthCallback />} />
+            <Route path="/calendly-oauth-callback" element={<CalendlyOAuthCallback />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
