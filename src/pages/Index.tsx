@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { AnalyticsTab } from "@/components/tabs/AnalyticsTab";
 import { IntegrationsTab } from "@/components/tabs/IntegrationsTab";
 import { TrelloTab } from "@/components/tabs/TrelloTab";
@@ -22,10 +23,14 @@ const Index = () => {
   const hasCalendly = connectedIntegrations.some(int => int.provider === 'calendly');
   const hasGoogleDrive = connectedIntegrations.some(int => int.provider === 'google-drive');
 
-  // Calculate number of tabs to show
-  const baseTabs = 2; // Analytics + Integrations
-  const connectedTabs = [hasTrello, hasGoogleCalendar, hasCalendly, hasGoogleDrive].filter(Boolean).length;
-  const totalTabs = baseTabs + connectedTabs;
+  const allTabs = [
+    { value: "analytics", label: "Analytics" },
+    { value: "integrations", label: "Integrations" },
+    ...(hasTrello ? [{ value: "trello", label: "Trello" }] : []),
+    ...(hasGoogleCalendar ? [{ value: "google-calendar", label: "Google Calendar" }] : []),
+    ...(hasCalendly ? [{ value: "calendly", label: "Calendly" }] : []),
+    ...(hasGoogleDrive ? [{ value: "drive", label: "Google Drive" }] : []),
+  ];
 
   return (
     <ProtectedRoute>
@@ -41,14 +46,24 @@ const Index = () => {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className={`grid w-full grid-cols-${Math.min(totalTabs, 6)}`}>
-                <TabsTrigger value="analytics">Analytics</TabsTrigger>
-                <TabsTrigger value="integrations">Integrations</TabsTrigger>
-                {hasTrello && <TabsTrigger value="trello">Trello</TabsTrigger>}
-                {hasGoogleCalendar && <TabsTrigger value="google-calendar">Google Calendar</TabsTrigger>}
-                {hasCalendly && <TabsTrigger value="calendly">Calendly</TabsTrigger>}
-                {hasGoogleDrive && <TabsTrigger value="drive">Google Drive</TabsTrigger>}
-              </TabsList>
+              <div className="relative w-full">
+                <Carousel className="w-full max-w-full">
+                  <CarouselContent className="-ml-2 md:-ml-4">
+                    {allTabs.map((tab) => (
+                      <CarouselItem key={tab.value} className="pl-2 md:pl-4 basis-auto">
+                        <TabsTrigger 
+                          value={tab.value}
+                          className="whitespace-nowrap px-4 py-2 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground"
+                        >
+                          {tab.label}
+                        </TabsTrigger>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="left-0 h-8 w-8" />
+                  <CarouselNext className="right-0 h-8 w-8" />
+                </Carousel>
+              </div>
 
               <TabsContent value="analytics" className="space-y-4">
                 <AnalyticsTab />
