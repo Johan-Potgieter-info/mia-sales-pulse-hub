@@ -4,14 +4,14 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
-import { useCalendlyV2API } from "@/hooks/integrations/useCalendlyV2API";
+import { useCalendlyOAuth } from "@/hooks/integrations/calendly/useCalendlyOAuth";
 
 export const CalendlyOAuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
-  const { handleOAuthCallback } = useCalendlyV2API();
+  const { handleOAuthCallback } = useCalendlyOAuth();
 
   useEffect(() => {
     const processCallback = async () => {

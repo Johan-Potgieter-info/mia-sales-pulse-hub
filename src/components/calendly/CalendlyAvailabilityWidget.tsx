@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, RefreshCw } from "lucide-react";
-import { useCalendlyV2API, CalendlyAvailableTime } from "@/hooks/integrations/useCalendlyV2API";
+import { useCalendlyAvailability } from "@/hooks/integrations/calendly/useCalendlyAvailability";
+import type { CalendlyAvailableTime } from '@/types/calendly';
 import { format, addDays, startOfDay } from 'date-fns';
 
 interface CalendlyAvailabilityWidgetProps {
@@ -22,11 +22,9 @@ export const CalendlyAvailabilityWidget = ({
 }: CalendlyAvailabilityWidgetProps) => {
   const [availability, setAvailability] = useState<CalendlyAvailableTime[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [isLoading, setIsLoading] = useState(false);
-  const { getAvailability } = useCalendlyV2API();
+  const { isLoading, getAvailability } = useCalendlyAvailability();
 
   const loadAvailability = async (date: Date) => {
-    setIsLoading(true);
     try {
       const startTime = startOfDay(date).toISOString();
       const endTime = startOfDay(addDays(date, 7)).toISOString();
@@ -36,8 +34,6 @@ export const CalendlyAvailabilityWidget = ({
     } catch (error) {
       console.error('Failed to load availability:', error);
       setAvailability([]);
-    } finally {
-      setIsLoading(false);
     }
   };
 

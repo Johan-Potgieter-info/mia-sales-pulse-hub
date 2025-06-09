@@ -1,14 +1,14 @@
 
 import { Button } from "@/components/ui/button";
 import { Calendar, Loader2 } from "lucide-react";
-import { useCalendlyV2API } from "@/hooks/integrations/useCalendlyV2API";
+import { useCalendlyOAuth } from "@/hooks/integrations/calendly/useCalendlyOAuth";
 
 interface CalendlyOAuthButtonProps {
   onSuccess?: () => void;
 }
 
 export const CalendlyOAuthButton = ({ onSuccess }: CalendlyOAuthButtonProps) => {
-  const { isLoading, initiateOAuth } = useCalendlyV2API();
+  const { isLoading, initiateOAuth } = useCalendlyOAuth();
 
   const handleConnect = async () => {
     await initiateOAuth();
