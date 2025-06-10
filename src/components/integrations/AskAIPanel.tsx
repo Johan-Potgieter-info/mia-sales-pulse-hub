@@ -96,7 +96,7 @@ export const AskAIPanel = ({ context }: AskAIPanelProps) => {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: "Sorry, I couldn't process your request. Please ensure you have an AI API connected.",
+        content: "Sorry, I couldn't process your request. Please try again later.",
         timestamp: new Date().toLocaleTimeString()
       };
       setChatHistory(prev => [...prev, errorMessage]);
@@ -134,7 +134,7 @@ export const AskAIPanel = ({ context }: AskAIPanelProps) => {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: "Sorry, I couldn't process your request. Please ensure you have an AI API connected.",
+        content: "Sorry, I couldn't process your request. Please try again later.",
         timestamp: new Date().toLocaleTimeString()
       };
       setChatHistory(prev => [...prev, errorMessage]);
