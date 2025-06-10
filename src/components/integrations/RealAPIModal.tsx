@@ -7,6 +7,8 @@ import { AIConnectionForm } from "./forms/AIConnectionForm";
 import { TrelloConnectionForm } from "./forms/TrelloConnectionForm";
 import { GoogleCalendarConnectionForm } from "./forms/GoogleCalendarConnectionForm";
 import { CalendlyConnectionForm } from "./forms/CalendlyConnectionForm";
+import { GoogleSheetConnectionForm } from "./forms/GoogleSheetConnectionForm";
+import { GoogleDocConnectionForm } from "./forms/GoogleDocConnectionForm";
 
 interface RealAPIModalProps {
   open: boolean;
@@ -14,7 +16,15 @@ interface RealAPIModalProps {
 }
 
 export const RealAPIModal = ({ open, onOpenChange }: RealAPIModalProps) => {
-  const { connectTrelloAPI, connectGoogleCalendar, connectCalendlyAPI, connectAIAPI, isLoading } = useAPIIntegrations();
+  const {
+    connectTrelloAPI,
+    connectGoogleCalendar,
+    connectCalendlyAPI,
+    connectGoogleSheetAPI,
+    connectGoogleDocAPI,
+    connectAIAPI,
+    isLoading
+  } = useAPIIntegrations();
 
   const handleTrelloConnect = async (apiKey: string, token: string) => {
     await connectTrelloAPI(apiKey, token);
@@ -33,6 +43,16 @@ export const RealAPIModal = ({ open, onOpenChange }: RealAPIModalProps) => {
 
   const handleAIConnect = async (apiKey: string, provider: 'openai' | 'claude', model: string) => {
     await connectAIAPI(apiKey, provider, model);
+    onOpenChange(false);
+  };
+
+  const handleSheetConnect = async (url: string) => {
+    await connectGoogleSheetAPI(url);
+    onOpenChange(false);
+  };
+
+  const handleDocConnect = async (url: string) => {
+    await connectGoogleDocAPI(url);
     onOpenChange(false);
   };
 
@@ -76,6 +96,8 @@ export const RealAPIModal = ({ open, onOpenChange }: RealAPIModalProps) => {
 
           <TabsContent value="google" className="space-y-4">
             <GoogleCalendarConnectionForm onConnect={handleGoogleConnect} isLoading={isLoading} />
+            <GoogleSheetConnectionForm onConnect={handleSheetConnect} isLoading={isLoading} />
+            <GoogleDocConnectionForm onConnect={handleDocConnect} isLoading={isLoading} />
           </TabsContent>
 
           <TabsContent value="calendly" className="space-y-4">

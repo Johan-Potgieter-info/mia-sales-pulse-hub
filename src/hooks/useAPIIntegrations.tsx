@@ -9,6 +9,8 @@ import { credentialsService } from '@/services/credentialsService';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useCalendlyAPI } from '@/hooks/integrations/useCalendlyAPI';
+import { useGoogleSheets } from '@/hooks/integrations/useGoogleSheets';
+import { useGoogleDocs } from '@/hooks/integrations/useGoogleDocs';
 
 export const useAPIIntegrations = () => {
   const [integrations, setIntegrations] = useState<APIIntegration[]>([]);
@@ -21,6 +23,8 @@ export const useAPIIntegrations = () => {
   const { connectGoogleCalendar: googleConnect } = useGoogleCalendarAPI();
   const { connectAIAPI: aiConnect } = useAIAPI();
   const { connectCalendlyAPI: calendlyConnect } = useCalendlyAPI();
+  const { connectGoogleSheet: sheetConnect } = useGoogleSheets();
+  const { connectGoogleDoc: docConnect } = useGoogleDocs();
 
   // Load integrations from database
   const loadIntegrations = useCallback(async () => {
@@ -324,6 +328,112 @@ export const useAPIIntegrations = () => {
     }
   }, [calendlyConnect, loadIntegrations, toast, user, integrations]);
 
+  const connectGoogleSheetAPI = useCallback(async (sheetUrl: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to connect APIs",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await sheetConnect(sheetUrl);
+
+      const dbIntegration = await integrationService.createIntegration(
+        'Google Sheet',
+        'google-sheets',
+        'docs',
+        {}
+      );
+
+      if (result.data) {
+        await integrationService.storeIntegrationData(
+          dbIntegration.id,
+          'url',
+          result.data
+        );
+        setRealTimeData(prev => ({
+          ...prev,
+          googleSheets: {
+            sheets: [...(prev.googleSheets?.sheets || []), result.data]
+          }
+        }));
+      }
+
+      await loadIntegrations();
+
+      toast({
+        title: "Google Sheet Saved",
+        description: "Spreadsheet link added",
+      });
+    } catch (error) {
+      console.error('Google Sheet save failed:', error);
+      toast({
+        title: "Connection Failed",
+        description: "Failed to save Google Sheet URL",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [sheetConnect, loadIntegrations, toast, user]);
+
+  const connectGoogleDocAPI = useCallback(async (docUrl: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to connect APIs",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await docConnect(docUrl);
+
+      const dbIntegration = await integrationService.createIntegration(
+        'Google Doc',
+        'google-docs',
+        'docs',
+        {}
+      );
+
+      if (result.data) {
+        await integrationService.storeIntegrationData(
+          dbIntegration.id,
+          'url',
+          result.data
+        );
+        setRealTimeData(prev => ({
+          ...prev,
+          googleDocs: {
+            docs: [...(prev.googleDocs?.docs || []), result.data]
+          }
+        }));
+      }
+
+      await loadIntegrations();
+
+      toast({
+        title: "Google Document Saved",
+        description: "Document link added",
+      });
+    } catch (error) {
+      console.error('Google Doc save failed:', error);
+      toast({
+        title: "Connection Failed",
+        description: "Failed to save Google Doc URL",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [docConnect, loadIntegrations, toast, user]);
+
   const refreshIntegration = useCallback(async (integrationId: string) => {
     const integration = integrations.find(int => int.id === integrationId);
     if (!integration || !user) return;
@@ -392,6 +502,8 @@ export const useAPIIntegrations = () => {
     connectTrelloAPI,
     connectGoogleCalendar,
     connectCalendlyAPI,
+    connectGoogleSheetAPI,
+    connectGoogleDocAPI,
     connectAIAPI,
     refreshIntegration,
     disconnectIntegration
