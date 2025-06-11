@@ -71,3 +71,19 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Analytics and Python setup
+
+This project includes an `analytics` directory for storing documents and running Python based analysis. After installing dependencies, create the analytics folders by running:
+
+```sh
+npm run setup:analytics
+```
+
+Place JSON files containing API data inside `analytics/documents/`. You can then run the analytics script which will generate example visualisations in the same folder:
+
+```sh
+npm run analytics
+```
+
+Python dependencies for the script are listed in `analytics/requirements.txt`.
