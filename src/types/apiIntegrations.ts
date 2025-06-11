@@ -33,6 +33,12 @@ export interface RealTimeData {
   googleSheets?: {
     sheets: any[];
   };
+  googleDrive?: {
+    files: any[];
+    sheets: any[];
+    forms: any[];
+    docs: any[];
+  };
   aiInsights?: {
     insights: any[];
   };
