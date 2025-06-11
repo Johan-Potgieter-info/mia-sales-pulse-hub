@@ -46,11 +46,11 @@ const Index = () => {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <div className="relative w-full">
+              <div className="relative w-full px-12">
                 <Carousel className="w-full max-w-full">
                   <CarouselContent className="-ml-1">
                     <CarouselItem className="pl-1 basis-auto">
-                      <TabsList className="h-10 p-1 bg-muted rounded-md">
+                      <TabsList className="h-10 p-1 bg-muted rounded-md w-full min-w-fit">
                         {allTabs.map((tab) => (
                           <TabsTrigger 
                             key={tab.value}
@@ -63,8 +63,8 @@ const Index = () => {
                       </TabsList>
                     </CarouselItem>
                   </CarouselContent>
-                  <CarouselPrevious className="left-0 h-8 w-8" />
-                  <CarouselNext className="right-0 h-8 w-8" />
+                  <CarouselPrevious className="left-0 h-8 w-8 -translate-x-2" />
+                  <CarouselNext className="right-0 h-8 w-8 translate-x-2" />
                 </Carousel>
               </div>
 
