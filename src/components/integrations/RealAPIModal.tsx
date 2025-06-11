@@ -2,11 +2,12 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAPIIntegrations } from "@/hooks/useAPIIntegrations";
-import { Calendar, Trello, MessageSquare } from "lucide-react";
+import { Calendar, Trello, MessageSquare, FolderOpen } from "lucide-react";
 import { AIConnectionForm } from "./forms/AIConnectionForm";
 import { TrelloConnectionForm } from "./forms/TrelloConnectionForm";
 import { GoogleCalendarConnectionForm } from "./forms/GoogleCalendarConnectionForm";
 import { CalendlyConnectionForm } from "./forms/CalendlyConnectionForm";
+import { GoogleDriveConnectionForm } from "./forms/GoogleDriveConnectionForm";
 
 interface RealAPIModalProps {
   open: boolean;
@@ -14,7 +15,7 @@ interface RealAPIModalProps {
 }
 
 export const RealAPIModal = ({ open, onOpenChange }: RealAPIModalProps) => {
-  const { connectTrelloAPI, connectGoogleCalendar, connectCalendlyAPI, connectAIAPI, isLoading } = useAPIIntegrations();
+  const { connectTrelloAPI, connectGoogleCalendar, connectCalendlyAPI, connectAIAPI, connectGoogleDrive, isLoading } = useAPIIntegrations();
 
   const handleTrelloConnect = async (apiKey: string, token: string) => {
     await connectTrelloAPI(apiKey, token);
@@ -36,6 +37,11 @@ export const RealAPIModal = ({ open, onOpenChange }: RealAPIModalProps) => {
     onOpenChange(false);
   };
 
+  const handleGoogleDriveConnect = async (accessToken: string) => {
+    await connectGoogleDrive(accessToken);
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
@@ -47,7 +53,7 @@ export const RealAPIModal = ({ open, onOpenChange }: RealAPIModalProps) => {
         </DialogHeader>
         
         <Tabs defaultValue="ai" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="ai" className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
               AI APIs
@@ -63,6 +69,10 @@ export const RealAPIModal = ({ open, onOpenChange }: RealAPIModalProps) => {
             <TabsTrigger value="calendly" className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               Calendly
+            </TabsTrigger>
+            <TabsTrigger value="drive" className="flex items-center gap-2">
+              <FolderOpen className="w-4 h-4" />
+              Drive
             </TabsTrigger>
           </TabsList>
 
@@ -80,6 +90,10 @@ export const RealAPIModal = ({ open, onOpenChange }: RealAPIModalProps) => {
 
           <TabsContent value="calendly" className="space-y-4">
             <CalendlyConnectionForm onConnect={handleCalendlyConnect} isLoading={isLoading} />
+          </TabsContent>
+
+          <TabsContent value="drive" className="space-y-4">
+            <GoogleDriveConnectionForm onConnect={handleGoogleDriveConnect} isLoading={isLoading} />
           </TabsContent>
         </Tabs>
       </DialogContent>

@@ -4,6 +4,7 @@ import { APIIntegration, RealTimeData, AIProvider } from '@/types/apiIntegration
 import { useTrelloAPI } from '@/hooks/integrations/useTrelloAPI';
 import { useGoogleCalendarAPI } from '@/hooks/integrations/useGoogleCalendarAPI';
 import { useAIAPI } from '@/hooks/integrations/useAIAPI';
+import { useGoogleDriveAPI } from '@/hooks/integrations/useGoogleDriveAPI';
 import { integrationService } from '@/services/integrationService';
 import { credentialsService } from '@/services/credentialsService';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +22,7 @@ export const useAPIIntegrations = () => {
   const { connectGoogleCalendar: googleConnect } = useGoogleCalendarAPI();
   const { connectAIAPI: aiConnect } = useAIAPI();
   const { connectCalendlyAPI: calendlyConnect } = useCalendlyAPI();
+  const { connectGoogleDrive: googleDriveConnect } = useGoogleDriveAPI();
 
   // Load integrations from database
   const loadIntegrations = useCallback(async () => {
@@ -42,6 +44,7 @@ export const useAPIIntegrations = () => {
               case 'trello': return '🗂️';
               case 'google-calendar': return '📅';
               case 'openai': case 'claude': return '🤖';
+              case 'google-drive': return '🗂️';
               default: return '🔗';
             }
           };
@@ -62,6 +65,11 @@ export const useAPIIntegrations = () => {
               setRealTimeData(prev => ({
                 ...prev,
                 trello: latestData.data
+              }));
+            } else if (dbInt.provider === 'google-drive') {
+              setRealTimeData(prev => ({
+                ...prev,
+                googleDrive: latestData.data
               }));
             }
           }
@@ -324,6 +332,66 @@ export const useAPIIntegrations = () => {
     }
   }, [calendlyConnect, loadIntegrations, toast, user, integrations]);
 
+  const connectGoogleDrive = useCallback(async (accessToken: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to connect APIs",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check for existing Google Drive connection
+    const existingDrive = integrations.find(int => int.provider === 'google-drive');
+    if (existingDrive) {
+      toast({
+        title: "Already Connected",
+        description: "Google Drive is already connected. Disconnect first to add a new connection.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await googleDriveConnect(accessToken);
+      
+      // Store in database
+      const dbIntegration = await integrationService.createIntegration(
+        'Google Drive',
+        'google-drive',
+        'storage',
+        { access_token: accessToken }
+      );
+
+      if (result.data) {
+        await integrationService.storeIntegrationData(
+          dbIntegration.id,
+          'files',
+          result.data
+        );
+        setRealTimeData(prev => ({ ...prev, googleDrive: result.data }));
+      }
+
+      await loadIntegrations();
+
+      toast({
+        title: "Google Drive Connected",
+        description: "Successfully connected to Google Drive API",
+      });
+    } catch (error) {
+      console.error('Google Drive connection failed:', error);
+      toast({
+        title: "Connection Failed",
+        description: "Failed to connect to Google Drive API",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [googleDriveConnect, loadIntegrations, toast, user, integrations]);
+
   const refreshIntegration = useCallback(async (integrationId: string) => {
     const integration = integrations.find(int => int.id === integrationId);
     if (!integration || !user) return;
@@ -341,6 +409,8 @@ export const useAPIIntegrations = () => {
         await connectGoogleCalendar(credentials.access_token);
       } else if (integration.provider === 'calendly' && credentials.access_token) {
         await connectCalendlyAPI(credentials.access_token);
+      } else if (integration.provider === 'google-drive' && credentials.access_token) {
+        await connectGoogleDrive(credentials.access_token);
       } else {
         await integrationService.updateIntegrationStatus(integrationId, 'connected');
         await loadIntegrations();
@@ -349,7 +419,7 @@ export const useAPIIntegrations = () => {
       await integrationService.updateIntegrationStatus(integrationId, 'error');
       await loadIntegrations();
     }
-  }, [integrations, connectTrelloAPI, connectGoogleCalendar, connectCalendlyAPI, loadIntegrations, user]);
+  }, [integrations, connectTrelloAPI, connectGoogleCalendar, connectCalendlyAPI, connectGoogleDrive, loadIntegrations, user]);
 
   const disconnectIntegration = useCallback(async (integrationId: string) => {
     if (!user) return;
@@ -366,6 +436,7 @@ export const useAPIIntegrations = () => {
           if (integration.provider === 'trello') delete newData.trello;
           if (integration.provider === 'google-calendar') delete newData.googleCalendar;
           if (integration.provider === 'calendly') delete newData.calendly;
+          if (integration.provider === 'google-drive') delete newData.googleDrive;
           if (integration.category === 'ai') delete newData.aiInsights;
         }
         return newData;
@@ -393,6 +464,7 @@ export const useAPIIntegrations = () => {
     connectGoogleCalendar,
     connectCalendlyAPI,
     connectAIAPI,
+    connectGoogleDrive,
     refreshIntegration,
     disconnectIntegration
   };

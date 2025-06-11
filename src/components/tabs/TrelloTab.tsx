@@ -1,240 +1,155 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Trello, Clock, CheckCircle, ArrowRight, Users, Calendar } from "lucide-react";
-
-const mockTrelloData = {
-  summary: {
-    totalCards: 156,
-    completedCards: 89,
-    inProgressCards: 45,
-    averageCompletionTime: 4.2
-  },
-  boards: [
-    {
-      id: 1,
-      name: "Sales Pipeline Q2",
-      cards: 45,
-      completed: 28,
-      inProgress: 12,
-      todo: 5,
-      completionRate: 62
-    },
-    {
-      id: 2,
-      name: "Client Onboarding",
-      cards: 32,
-      completed: 25,
-      inProgress: 5,
-      todo: 2,
-      completionRate: 78
-    },
-    {
-      id: 3,
-      name: "Product Development",
-      cards: 28,
-      completed: 15,
-      inProgress: 8,
-      todo: 5,
-      completionRate: 54
-    },
-    {
-      id: 4,
-      name: "Marketing Campaigns",
-      cards: 24,
-      completed: 18,
-      inProgress: 4,
-      todo: 2,
-      completionRate: 75
-    }
-  ],
-  recentActivity: [
-    {
-      id: 1,
-      action: "moved",
-      cardName: "Follow up with Acme Corp",
-      fromList: "In Progress",
-      toList: "Done",
-      user: "Sarah Johnson",
-      timestamp: "2 hours ago"
-    },
-    {
-      id: 2,
-      action: "created",
-      cardName: "Schedule demo for Tech Solutions",
-      fromList: null,
-      toList: "To Do",
-      user: "Mike Chen",
-      timestamp: "5 hours ago"
-    },
-    {
-      id: 3,
-      action: "moved",
-      cardName: "Contract review - Global Industries",
-      fromList: "To Do",
-      toList: "In Progress",
-      user: "Lisa Wong",
-      timestamp: "1 day ago"
-    },
-    {
-      id: 4,
-      action: "completed",
-      cardName: "Proposal sent to StartupCo",
-      fromList: "In Progress",
-      toList: "Done",
-      user: "David Miller",
-      timestamp: "2 days ago"
-    }
-  ],
-  teamVelocity: [
-    { week: "Week 1", completed: 12 },
-    { week: "Week 2", completed: 18 },
-    { week: "Week 3", completed: 15 },
-    { week: "Week 4", completed: 22 }
-  ]
-};
+import { Button } from "@/components/ui/button";
+import { Calendar, CheckCircle, Clock, Users, Plus, ExternalLink } from "lucide-react";
+import { useAPIIntegrations } from "@/hooks/useAPIIntegrations";
 
 export const TrelloTab = () => {
-  const { summary, boards, recentActivity } = mockTrelloData;
+  const { realTimeData } = useAPIIntegrations();
+  const trelloData = realTimeData.trello;
 
-  const getActionIcon = (action: string) => {
-    switch (action) {
-      case 'moved':
-        return <ArrowRight className="w-4 h-4 text-blue-500" />;
-      case 'created':
-        return <Calendar className="w-4 h-4 text-green-500" />;
-      case 'completed':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      default:
-        return <Clock className="w-4 h-4 text-gray-500" />;
-    }
-  };
+  if (!trelloData || !trelloData.boards) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center p-8">
+          <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Loading Trello Data</h3>
+          <p className="text-muted-foreground">
+            Fetching your boards and cards from Trello...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-  const getActionText = (activity: any) => {
-    switch (activity.action) {
-      case 'moved':
-        return `moved "${activity.cardName}" from ${activity.fromList} to ${activity.toList}`;
-      case 'created':
-        return `created "${activity.cardName}" in ${activity.toList}`;
-      case 'completed':
-        return `completed "${activity.cardName}"`;
-      default:
-        return `updated "${activity.cardName}"`;
-    }
-  };
+  const boards = trelloData.boards || [];
+  const totalCards = trelloData.cards?.length || 0;
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold">Trello Dashboard</h2>
+          <p className="text-muted-foreground">
+            Manage your boards and track project progress
+          </p>
+        </div>
+        <Button className="flex items-center gap-2">
+          <Plus className="w-4 h-4" />
+          Open Trello
+          <ExternalLink className="w-4 h-4" />
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Boards</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{boards.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Active project boards
+            </p>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Cards</CardTitle>
-            <Trello className="h-4 w-4 text-muted-foreground" />
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.totalCards}</div>
-            <p className="text-xs text-muted-foreground">Across all boards</p>
+            <div className="text-2xl font-bold">{totalCards}</div>
+            <p className="text-xs text-muted-foreground">
+              Cards across all boards
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summary.completedCards}</div>
-            <p className="text-xs text-muted-foreground">This month</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-            <Clock className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summary.inProgressCards}</div>
-            <p className="text-xs text-muted-foreground">Active cards</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Completion</CardTitle>
+            <CardTitle className="text-sm font-medium">Team Boards</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.averageCompletionTime} days</div>
-            <p className="text-xs text-muted-foreground">Per card</p>
+            <div className="text-2xl font-bold">
+              {boards.filter(board => !board.closed).length}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Open collaborative boards
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Board Performance */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Board Performance</CardTitle>
-          <CardDescription>Completion rates and activity across boards</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {boards.map((board) => (
-              <div key={board.id} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">{board.name}</h4>
-                  <Badge variant="outline">{board.completionRate}% complete</Badge>
-                </div>
-                <Progress value={board.completionRate} className="h-2" />
-                <div className="grid grid-cols-4 gap-4 text-sm">
-                  <div className="text-center">
-                    <div className="font-medium text-green-600">{board.completed}</div>
-                    <div className="text-muted-foreground">Done</div>
+      {/* Boards Grid */}
+      <div className="space-y-4">
+        <h3 className="text-xl font-semibold">Your Boards</h3>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {boards.length > 0 ? (
+            boards.map((board: any) => (
+              <Card key={board.id} className="hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">{board.name}</CardTitle>
+                    <Badge variant={board.closed ? "secondary" : "default"}>
+                      {board.closed ? "Closed" : "Active"}
+                    </Badge>
                   </div>
-                  <div className="text-center">
-                    <div className="font-medium text-orange-600">{board.inProgress}</div>
-                    <div className="text-muted-foreground">In Progress</div>
+                  {board.desc && (
+                    <CardDescription className="text-sm">
+                      {board.desc.substring(0, 100)}
+                      {board.desc.length > 100 ? "..." : ""}
+                    </CardDescription>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Lists:</span>
+                      <span>{board.lists?.length || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Members:</span>
+                      <span>{board.memberships?.length || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Last Activity:</span>
+                      <span>
+                        {board.dateLastActivity 
+                          ? new Date(board.dateLastActivity).toLocaleDateString()
+                          : "N/A"
+                        }
+                      </span>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      className="w-full mt-3"
+                      onClick={() => window.open(board.url, '_blank')}
+                    >
+                      <ExternalLink className="w-3 h-3 mr-1" />
+                      View Board
+                    </Button>
                   </div>
-                  <div className="text-center">
-                    <div className="font-medium text-blue-600">{board.todo}</div>
-                    <div className="text-muted-foreground">To Do</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="font-medium">{board.cards}</div>
-                    <div className="text-muted-foreground">Total</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Latest card movements and updates</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className="flex items-start gap-3 p-3 border rounded-lg">
-                {getActionIcon(activity.action)}
-                <div className="flex-1">
-                  <p className="text-sm">
-                    <span className="font-medium">{activity.user}</span>{' '}
-                    {getActionText(activity)}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">{activity.timestamp}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="col-span-full text-center p-8">
+              <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Boards Found</h3>
+              <p className="text-muted-foreground">
+                Create your first board in Trello to see it here.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

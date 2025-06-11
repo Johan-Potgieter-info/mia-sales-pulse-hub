@@ -1,216 +1,319 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { FileText, Eye, Edit, Share, Download, TrendingUp } from "lucide-react";
-
-const mockDriveData = {
-  summary: {
-    totalDocuments: 248,
-    viewsThisMonth: 1423,
-    sharedDocuments: 89,
-    collaborativeEdits: 156
-  },
-  topDocuments: [
-    {
-      id: 1,
-      name: "Sales Proposal - Acme Corp.pdf",
-      type: "proposal",
-      views: 45,
-      lastViewed: "2 hours ago",
-      status: "active",
-      client: "Acme Corp"
-    },
-    {
-      id: 2,
-      name: "Product Demo Deck Q2.pptx",
-      type: "presentation",
-      views: 89,
-      lastViewed: "1 day ago",
-      status: "active",
-      client: "Multiple"
-    },
-    {
-      id: 3,
-      name: "Contract Template v2.1.docx",
-      type: "contract",
-      views: 23,
-      lastViewed: "3 days ago",
-      status: "updated",
-      client: "Template"
-    },
-    {
-      id: 4,
-      name: "ROI Analysis - Tech Solutions.xlsx",
-      type: "analysis",
-      views: 15,
-      lastViewed: "5 days ago",
-      status: "shared",
-      client: "Tech Solutions"
-    }
-  ],
-  documentTypes: [
-    { type: "Proposals", count: 45, engagement: 85 },
-    { type: "Presentations", count: 32, engagement: 92 },
-    { type: "Contracts", count: 28, engagement: 78 },
-    { type: "Analysis", count: 18, engagement: 88 }
-  ],
-  clientEngagement: [
-    { client: "Acme Corp", views: 145, documents: 8 },
-    { client: "Tech Solutions", views: 89, documents: 5 },
-    { client: "Global Industries", views: 67, documents: 4 },
-    { client: "StartupCo", views: 34, documents: 3 }
-  ]
-};
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  FileSpreadsheet, 
+  FileText, 
+  FormInput, 
+  FolderOpen, 
+  ExternalLink, 
+  Calendar,
+  Download
+} from "lucide-react";
+import { useAPIIntegrations } from "@/hooks/useAPIIntegrations";
 
 export const GoogleDriveTab = () => {
-  const { summary, topDocuments, documentTypes, clientEngagement } = mockDriveData;
+  const { realTimeData } = useAPIIntegrations();
+  const driveData = realTimeData.googleDrive;
 
-  const getFileIcon = (type: string) => {
-    return <FileText className="w-4 h-4 text-blue-500" />;
+  if (!driveData) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center p-8">
+          <FolderOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Loading Google Drive Data</h3>
+          <p className="text-muted-foreground">
+            Fetching your files from Google Drive...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const { files = [], sheets = [], forms = [], docs = [] } = driveData;
+
+  const formatFileSize = (bytes: string | number) => {
+    if (!bytes || bytes === '0') return 'N/A';
+    const size = typeof bytes === 'string' ? parseInt(bytes) : bytes;
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let i = 0;
+    let fileSize = size;
+    while (fileSize >= 1024 && i < units.length - 1) {
+      fileSize /= 1024;
+      i++;
+    }
+    return `${fileSize.toFixed(1)} ${units[i]}`;
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      active: "default",
-      updated: "secondary",
-      shared: "outline"
-    } as const;
-    
-    return (
-      <Badge variant={variants[status as keyof typeof variants] || "outline"}>
-        {status}
-      </Badge>
-    );
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
   };
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold">Google Drive Dashboard</h2>
+          <p className="text-muted-foreground">
+            Access your Sheets, Forms, Documents and more
+          </p>
+        </div>
+        <Button className="flex items-center gap-2">
+          <FolderOpen className="w-4 h-4" />
+          Open Drive
+          <ExternalLink className="w-4 h-4" />
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Documents</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Files</CardTitle>
+            <FolderOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.totalDocuments}</div>
-            <p className="text-xs text-muted-foreground">In sales drive</p>
+            <div className="text-2xl font-bold">{files.length}</div>
+            <p className="text-xs text-muted-foreground">All file types</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Views This Month</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Spreadsheets</CardTitle>
+            <FileSpreadsheet className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.viewsThisMonth.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Document views</p>
+            <div className="text-2xl font-bold">{sheets.length}</div>
+            <p className="text-xs text-muted-foreground">Google Sheets</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Shared Documents</CardTitle>
-            <Share className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Forms</CardTitle>
+            <FormInput className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.sharedDocuments}</div>
-            <p className="text-xs text-muted-foreground">With clients</p>
+            <div className="text-2xl font-bold">{forms.length}</div>
+            <p className="text-xs text-muted-foreground">Google Forms</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Collaborative Edits</CardTitle>
-            <Edit className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Documents</CardTitle>
+            <FileText className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summary.collaborativeEdits}</div>
-            <p className="text-xs text-muted-foreground">This month</p>
+            <div className="text-2xl font-bold">{docs.length}</div>
+            <p className="text-xs text-muted-foreground">Google Docs</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Top Documents */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Most Viewed Documents</CardTitle>
-          <CardDescription>Documents with highest engagement</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {topDocuments.map((doc) => (
-              <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-4">
-                  {getFileIcon(doc.type)}
-                  <div>
-                    <h4 className="font-medium">{doc.name}</h4>
-                    <p className="text-sm text-muted-foreground">Client: {doc.client}</p>
-                  </div>
-                </div>
-                <div className="text-right space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Eye className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium">{doc.views}</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">{doc.lastViewed}</div>
-                  {getStatusBadge(doc.status)}
-                </div>
+      {/* File Categories */}
+      <Tabs defaultValue="sheets" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="sheets" className="flex items-center gap-2">
+            <FileSpreadsheet className="w-4 h-4" />
+            Sheets ({sheets.length})
+          </TabsTrigger>
+          <TabsTrigger value="forms" className="flex items-center gap-2">
+            <FormInput className="w-4 h-4" />
+            Forms ({forms.length})
+          </TabsTrigger>
+          <TabsTrigger value="docs" className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            Docs ({docs.length})
+          </TabsTrigger>
+          <TabsTrigger value="all" className="flex items-center gap-2">
+            <FolderOpen className="w-4 h-4" />
+            All Files ({files.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="sheets" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {sheets.length > 0 ? (
+              sheets.map((file: any) => (
+                <Card key={file.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <FileSpreadsheet className="w-4 h-4 text-green-500" />
+                        {file.name}
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <div className="flex justify-between">
+                        <span>Created:</span>
+                        <span>{formatDate(file.createdTime)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Modified:</span>
+                        <span>{formatDate(file.modifiedTime)}</span>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        className="w-full mt-3"
+                        onClick={() => window.open(file.webViewLink, '_blank')}
+                      >
+                        <ExternalLink className="w-3 h-3 mr-1" />
+                        Open Sheet
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full text-center p-8">
+                <FileSpreadsheet className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Sheets Found</h3>
+                <p className="text-muted-foreground">Create your first Google Sheet to see it here.</p>
               </div>
-            ))}
+            )}
           </div>
-        </CardContent>
-      </Card>
+        </TabsContent>
 
-      {/* Document Types & Client Engagement */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Document Types Performance</CardTitle>
-            <CardDescription>Engagement by document type</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {documentTypes.map((type, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{type.type}</span>
-                  <span className="text-sm text-muted-foreground">{type.count} docs</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Progress value={type.engagement} className="flex-1" />
-                  <span className="text-sm text-muted-foreground">{type.engagement}%</span>
-                </div>
+        <TabsContent value="forms" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {forms.length > 0 ? (
+              forms.map((file: any) => (
+                <Card key={file.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <FormInput className="w-4 h-4 text-purple-500" />
+                        {file.name}
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <div className="flex justify-between">
+                        <span>Created:</span>
+                        <span>{formatDate(file.createdTime)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Modified:</span>
+                        <span>{formatDate(file.modifiedTime)}</span>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        className="w-full mt-3"
+                        onClick={() => window.open(file.webViewLink, '_blank')}
+                      >
+                        <ExternalLink className="w-3 h-3 mr-1" />
+                        Open Form
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full text-center p-8">
+                <FormInput className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Forms Found</h3>
+                <p className="text-muted-foreground">Create your first Google Form to see it here.</p>
               </div>
-            ))}
-          </CardContent>
-        </Card>
+            )}
+          </div>
+        </TabsContent>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Client Engagement</CardTitle>
-            <CardDescription>Document views by client</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {clientEngagement.map((client, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <h4 className="font-medium">{client.client}</h4>
-                  <p className="text-sm text-muted-foreground">{client.documents} documents</p>
-                </div>
-                <div className="text-right">
-                  <div className="flex items-center gap-1">
-                    <TrendingUp className="w-4 h-4 text-green-500" />
-                    <span className="font-medium">{client.views}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">views</p>
-                </div>
+        <TabsContent value="docs" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {docs.length > 0 ? (
+              docs.map((file: any) => (
+                <Card key={file.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-blue-500" />
+                        {file.name}
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <div className="flex justify-between">
+                        <span>Created:</span>
+                        <span>{formatDate(file.createdTime)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Modified:</span>
+                        <span>{formatDate(file.modifiedTime)}</span>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        className="w-full mt-3"
+                        onClick={() => window.open(file.webViewLink, '_blank')}
+                      >
+                        <ExternalLink className="w-3 h-3 mr-1" />
+                        Open Doc
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full text-center p-8">
+                <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Documents Found</h3>
+                <p className="text-muted-foreground">Create your first Google Doc to see it here.</p>
               </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="all" className="space-y-4">
+          <div className="grid gap-4">
+            {files.length > 0 ? (
+              files.map((file: any) => (
+                <Card key={file.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-muted rounded flex items-center justify-center">
+                          {file.mimeType.includes('spreadsheet') && <FileSpreadsheet className="w-4 h-4 text-green-500" />}
+                          {file.mimeType.includes('form') && <FormInput className="w-4 h-4 text-purple-500" />}
+                          {file.mimeType.includes('document') && <FileText className="w-4 h-4 text-blue-500" />}
+                          {!file.mimeType.includes('spreadsheet') && !file.mimeType.includes('form') && !file.mimeType.includes('document') && <FolderOpen className="w-4 h-4" />}
+                        </div>
+                        <div>
+                          <h4 className="font-medium">{file.name}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {formatDate(file.modifiedTime)} • {formatFileSize(file.size)}
+                          </p>
+                        </div>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => window.open(file.webViewLink, '_blank')}
+                      >
+                        <ExternalLink className="w-3 h-3 mr-1" />
+                        Open
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center p-8">
+                <FolderOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Files Found</h3>
+                <p className="text-muted-foreground">Your Google Drive files will appear here.</p>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
