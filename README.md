@@ -71,3 +71,7 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Built-in AI Chat
+
+Authenticated users can now access AI-powered chat without providing their own API keys. A new Supabase function `ai-chat` proxies requests to OpenAI's API. Set the `OPENAI_API_KEY` environment variable in your Supabase project to enable this feature.
