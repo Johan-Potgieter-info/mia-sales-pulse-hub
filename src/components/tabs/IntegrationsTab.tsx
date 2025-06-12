@@ -7,6 +7,7 @@ import { useState } from "react";
 import { RealAPIModal } from "@/components/integrations/RealAPIModal";
 import { APIConnectorDashboard } from "@/components/integrations/APIConnectorDashboard";
 import { AskAIPanel } from "@/components/integrations/AskAIPanel";
+import { ExcelUploadCard } from "@/components/integrations/ExcelUploadCard";
 import { useAPIIntegrations } from "@/hooks/useAPIIntegrations";
 
 export const IntegrationsTab = () => {
@@ -81,8 +82,11 @@ export const IntegrationsTab = () => {
         <AskAIPanel />
       )}
 
+      {/* Excel Upload */}
+      <ExcelUploadCard />
+
       {/* Real API Modal */}
-      <RealAPIModal 
+      <RealAPIModal
         open={showAddAPIModal}
         onOpenChange={setShowAddAPIModal}
       />
