@@ -8,6 +8,9 @@ import { TrelloTab } from "@/components/tabs/TrelloTab";
 import { CalendlyTab } from "@/components/tabs/CalendlyTab";
 import { GoogleDriveTab } from "@/components/tabs/GoogleDriveTab";
 import { GoogleCalendarDashboard } from "@/components/tabs/GoogleCalendarDashboard";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
+import { useRefreshCache } from "@/hooks/useRefreshCache";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Header } from "@/components/layout/Header";
 import { useAPIIntegrations } from "@/hooks/useAPIIntegrations";
@@ -15,6 +18,7 @@ import { useAPIIntegrations } from "@/hooks/useAPIIntegrations";
 const Index = () => {
   const [activeTab, setActiveTab] = useState("analytics");
   const { integrations } = useAPIIntegrations();
+  const { refreshCache, isRefreshing } = useRefreshCache();
 
   // Filter only connected integrations
   const connectedIntegrations = integrations.filter(int => int.status === 'connected');
@@ -43,6 +47,15 @@ const Index = () => {
               <p className="text-xl text-muted-foreground">
                 Your unified dashboard for sales analytics and integrations
               </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refreshCache}
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`w-4 h-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh Cache'}
+              </Button>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
