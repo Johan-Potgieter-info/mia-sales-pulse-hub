@@ -1,4 +1,5 @@
-import { DashboardOverview } from "@/components/dashboard/dashboard-overview"
+
+import { DashboardOverview } from "@/components/dashboard/DashboardOverview"
 import { CalendarTab } from "@/components/tabs/CalendarTab"
 import { TrelloTab } from "@/components/tabs/TrelloTab"
 import { IntegrationsTab } from "@/components/tabs/IntegrationsTab"
